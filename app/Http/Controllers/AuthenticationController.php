@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cookie;
 
 class AuthenticationController extends Controller
 {
@@ -41,9 +42,18 @@ class AuthenticationController extends Controller
 
     public function logout(Request $request)
     {
+        // Clear Laravel session
         session()->forget('emp_data');
         session()->flush();
+
+        Cookie::queue(
+            Cookie::forget('sso_token')
+        );
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        $redirectUrl = urlencode(route('dashboard'));
+        return redirect("http://192.168.2.221/authify/public/logout?redirect={$redirectUrl}");
     }
 }

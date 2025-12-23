@@ -2,35 +2,64 @@ import { Link, usePage, router } from "@inertiajs/react";
 import { useState, useEffect } from "react";
 import Navigation from "@/Components/sidebar/Navigation";
 import ThemeToggler from "@/Components/sidebar/ThemeToggler";
+import { useThemeStore } from "@/Store/themeStore";
+import { GoSidebarCollapse, GoSidebarExpand } from "react-icons/go";
+import clsx from "clsx";
+
+export function useIsMobile(breakpoint = 768) {
+    const [isMobile, setIsMobile] = useState(() => {
+        if (typeof window === "undefined") return false;
+        return window.innerWidth < breakpoint;
+    });
+
+    useEffect(() => {
+        const onResize = () => {
+            setIsMobile(window.innerWidth < breakpoint);
+        };
+
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, [breakpoint]);
+
+    return isMobile;
+}
 
 export default function Sidebar() {
     const { display_name } = usePage().props;
-    const [theme, setTheme] = useState("light");
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false); // for responsiveness
-
-    useEffect(() => {
-        const storedTheme = localStorage.getItem("theme") || "light";
-        setTheme(storedTheme);
-        document.documentElement.setAttribute("data-theme", storedTheme);
-    }, []);
-
-    const toggleTheme = () => {
-        const newTheme = theme === "light" ? "dark" : "light";
-        setTheme(newTheme);
-        document.documentElement.setAttribute("data-theme", newTheme);
-        localStorage.setItem("theme", newTheme);
-    };
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true); // for responsiveness
+    const { theme, toggleTheme } = useThemeStore();
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const isMobile = useIsMobile();
 
     const formattedAppName = display_name
         ?.split(" ")
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
 
+    useEffect(() => {
+        if (!isSidebarOpen) {
+            setIsSidebarCollapsed(false);
+        }
+    }, [isSidebarOpen]);
+
+    useEffect(() => {
+        if (isMobile) {
+            setIsSidebarCollapsed(false);
+        } else {
+            setIsSidebarOpen(true);
+        }
+    }, [isMobile]);
+
     return (
-        <div className="flex">
+        <div
+            className={clsx(
+                "flex z-10 shadow-lg",
+                isSidebarCollapsed ? "w-16" : "md:w-64"
+            )}
+        >
             {/* Mobile Hamburger */}
             <button
-                className="absolute z-50 p-2 rounded top-4 right-4 md:hidden"
+                className="btn absolute p-2 top-4 right-4 md:hidden"
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             >
                 <svg
@@ -48,48 +77,42 @@ export default function Sidebar() {
                 </svg>
             </button>
 
-            {/* Sidebar */}
             <div
                 className={`
-                    fixed md:relative top-0 left-0 z-40 transition-transform transform
+                    fixed md:relative top-0 left-0 transition-transform transform
                     ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-                    md:translate-x-0
                     md:flex
-                    flex-col min-h-screen w-[270px] space-y-6 px-4 pb-6 pt-4
-                    ${
-                        theme === "light"
-                            ? "bg-gray-50 text-black"
-                            : "bg-base-100 text-base-content"
-                    }
+                    flex-col min-h-screen w-62.5 space-y-6 px-4 pb-6 pt-4
                 `}
                 style={{
                     scrollbarWidth: "none",
                     msOverflowStyle: "none",
                 }}
             >
-                {/* LOGO */}
-                <Link
-                    href={route("dashboard")}
-                    className="flex items-center pl-[10px] text-lg font-bold"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth="1.5"
-                        stroke="currentColor"
-                        className="w-5 h-5"
+                <div className={clsx("flex")}>
+                    <Link
+                        href={route("dashboard")}
+                        className={clsx(
+                            "flex-1 flex items-center pl-2.5 text-lg font-bold",
+                            isSidebarCollapsed && "hidden"
+                        )}
                     >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"
-                        />
-                    </svg>
-                    <p className="pt-[2px] pl-1">{formattedAppName}</p>
-                </Link>
-
-                <Navigation />
+                        <p className="pt-0.5 pl-1">PPC Portal</p>
+                    </Link>
+                    <button
+                        className={clsx("btn-square btn", isMobile && "hidden")}
+                        onClick={() =>
+                            setIsSidebarCollapsed(!isSidebarCollapsed)
+                        }
+                    >
+                        {isSidebarCollapsed ? (
+                            <GoSidebarCollapse className="w-6 h-6" />
+                        ) : (
+                            <GoSidebarExpand className="w-6 h-6" />
+                        )}
+                    </button>
+                </div>
+                <Navigation isCollapse={isSidebarCollapsed} />
 
                 <ThemeToggler toggleTheme={toggleTheme} theme={theme} />
             </div>

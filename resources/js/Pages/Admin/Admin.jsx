@@ -1,4 +1,3 @@
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, usePage, router } from "@inertiajs/react";
 import DataTable from "@/Components/DataTable";
 import Modal from "@/Components/Modal";
@@ -41,7 +40,7 @@ export default function Admin({ tableData, tableFilters, emp_data }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Manage Administrators" />
 
             <div className="flex items-center justify-between mb-4">
@@ -94,7 +93,7 @@ export default function Admin({ tableData, tableFilters, emp_data }) {
                         title={`Admin Details`}
                         show={true}
                         onClose={() => tableModalClose(close)}
-                        className="w-[300px]"
+                        className="w-75"
                     >
                         <p>
                             <strong>ID:</strong> {row.emp_id}
@@ -139,6 +138,6 @@ export default function Admin({ tableData, tableFilters, emp_data }) {
                     </Modal>
                 )}
             </DataTable>
-        </AuthenticatedLayout>
+        </>
     );
 }

@@ -1,6 +1,5 @@
 import React from "react";
 import { Head } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 export default function Unauthorized() {
     return (

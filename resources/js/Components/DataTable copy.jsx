@@ -176,7 +176,7 @@ export default function DataTable({
     };
 
     return (
-        <div className="w-[100%] p-3 border-[1px] border-gray-300 rounded-lg">
+        <div className="w-full p-3 border border-gray-300">
             {/* Filters */}
             <form
                 onSubmit={dateRangeSearch ? handleDateFilter : handleSearch}
@@ -193,7 +193,7 @@ export default function DataTable({
                             { preserveState: true }
                         );
                     }}
-                    className="select select-sm w-[100px] py-0"
+                    className="select select-sm w-25 py-0"
                 >
                     {[10, 25, 50, 100].map((num) => (
                         <option key={num} value={num}>
@@ -237,7 +237,7 @@ export default function DataTable({
                     <div className="flex items-center gap-2">
                         {filterDropdown && (
                             <select
-                                className="select select-sm w-[170px] py-0"
+                                className="select select-sm w-42.5 py-0"
                                 value={dropdownValue}
                                 onChange={(e) => {
                                     const value = e.target.value;
@@ -304,7 +304,7 @@ export default function DataTable({
 
             {/* Table */}
             <div className="mt-4 overflow-x-auto">
-                <table className="table table-zebra min-w-[100%]">
+                <table className="table table-zebra min-w-full">
                     <thead>
                         <tr>
                             {selectable && (

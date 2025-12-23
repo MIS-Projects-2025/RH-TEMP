@@ -30,14 +30,14 @@ export default function Login() {
             <Head title="Login" />
             {/* <pre>{JSON.stringify(props.emp_data, null, 2)}</pre> */}
 
-            <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
+            <div className="w-full max-w-md p-8 bg-white  shadow-lg">
                 <h2 className="mb-6 text-2xl font-semibold text-center">
                     LOGIN
                 </h2>
 
                 <InputError
                     message={errors.general}
-                    className="py-2 mt-2 mb-4 font-medium text-center bg-red-100 rounded-m5"
+                    className="py-2 mt-2 mb-4 font-medium text-center bg-red-100"
                 />
 
                 <form onSubmit={submit} className="space-y-5">

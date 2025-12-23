@@ -1,4 +1,3 @@
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, router, usePage } from "@inertiajs/react";
 import { useState } from "react";
 import InputError from "@/Components/InputError";
@@ -36,10 +35,10 @@ export default function Profile({ profile, errors }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Profile" />
 
-            <div className="max-w-3xl p-6 mx-auto border-[1px] rounded-2xl">
+            <div className="max-w-3xl p-6 mx-auto border">
                 <h1 className="pb-2 mb-6 text-2xl font-bold border-b">
                     User Profile
                 </h1>
@@ -69,7 +68,7 @@ export default function Profile({ profile, errors }) {
                                     .join("")}
                             />
                             <button
-                                className="border-blue-500 btn btn-sm border-[1px]"
+                                className="border-blue-500 btn btn-sm border"
                                 onClick={() => setPasswordForm(!passwordForm)}
                             >
                                 {passwordForm ? "Cancel" : "Change Password"}
@@ -205,7 +204,7 @@ export default function Profile({ profile, errors }) {
                     </div>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }
 

@@ -176,7 +176,7 @@ export default function DataTable({
     };
 
     return (
-        <div className="w-full p-3 border border-gray-300 rounded-lg">
+        <div className="w-full p-3 border border-gray-300">
             <form
                 onSubmit={dateRangeSearch ? handleDateFilter : handleSearch}
                 className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
@@ -192,7 +192,7 @@ export default function DataTable({
                             { preserveState: true }
                         );
                     }}
-                    className="select select-sm w-[100px] py-0"
+                    className="select select-sm w-25 py-0"
                 >
                     {[10, 25, 50, 100].map((num) => (
                         <option key={num} value={num}>
@@ -236,7 +236,7 @@ export default function DataTable({
                     <div className="flex flex-col w-full gap-2 sm:flex-row sm:items-center sm:w-auto">
                         {filterDropdown && (
                             <select
-                                className="select select-sm w-full sm:w-[170px] py-0"
+                                className="select select-sm w-full sm:w-42.5 py-0"
                                 value={dropdownValue}
                                 onChange={(e) => {
                                     const value = e.target.value;
@@ -378,7 +378,7 @@ export default function DataTable({
                                         {columns.map((col, i) => (
                                             <td
                                                 key={`${key}-${col.key}-${i}`}
-                                                className="whitespace-nowrap max-w-[200px] truncate"
+                                                className="whitespace-nowrap max-w-50 truncate"
                                             >
                                                 {row[col.key] ?? "-"}
                                             </td>

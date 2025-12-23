@@ -1,4 +1,3 @@
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, usePage, router } from "@inertiajs/react";
 import DataTable from "@/Components/DataTable";
 import Modal from "@/Components/Modal";
@@ -28,7 +27,7 @@ export default function NewAdmin({ tableData, tableFilters, emp_data }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Manage Administrators" />
 
             <div className="flex items-center justify-between mb-4">
@@ -62,7 +61,7 @@ export default function NewAdmin({ tableData, tableFilters, emp_data }) {
                         title={`Employee Details`}
                         show={true}
                         onClose={close}
-                        className="w-[350px] max-w-none"
+                        className="w-87.5 max-w-none"
                     >
                         <p>
                             <strong>ID:</strong> {row.EMPLOYID}
@@ -103,6 +102,6 @@ export default function NewAdmin({ tableData, tableFilters, emp_data }) {
                     </Modal>
                 )}
             </DataTable>
-        </AuthenticatedLayout>
+        </>
     );
 }
