@@ -7,6 +7,15 @@
 }
 
 @theme {
+  --animate-hehe: hehe .8s ease-in-out infinite;
+
+  @keyframes hehe {
+    50% {
+      opacity: .1
+    }
+  }
+
+
   --font-sans: "Poppins", sans-serif;
   
   /* default custom values */
@@ -15,6 +24,10 @@
   --color-base-300: #101010;
   --color-base-content: #d6d6d6;
   --color-base-content-dim: #d6d6d630;
+
+  --color-ok: #4caf50;
+  --color-warning: #ff9800;
+  --color-danger: #e53935;
 
   --color-f1color: #FF6A83;
   --color-f1color-15: #ff766a;
@@ -49,12 +62,12 @@
   --color-base-300: #e4e7eb;
   --color-base-content: #161616;
   --color-base-content-dim: #16161630;
-  --color-primary: #FF6A83;
-  --color-primary-content: #3A000B;
-  --color-secondary: #6BD3FF;
-  --color-secondary-content: #002B38;
-  --color-accent: #FFB86B;
-  --color-accent-content: #2C2A00;
+  --color-primary: #ff5733ff;
+  --color-primary-content: #ffffff;
+  --color-secondary: #50514fff;
+  --color-secondary-content: #f0f0f0;
+  --color-accent: #ffe066ff;
+  --color-accent-content: #3a3300;
   --color-neutral: #1C1B22;      
   --color-neutral-content: #d9dfe5;
 
@@ -77,12 +90,12 @@
   --color-base-300: #101010;
   --color-base-content: #d6d6d6;
   --color-base-content-dim: #d6d6d630;
-  --color-primary: #FF6A83;
-  --color-primary-content: #3A000B;
-  --color-secondary: #6BD3FF;
-  --color-secondary-content: #002B38;
-  --color-accent: #FFB86B;
-  --color-accent-content: #2C2A00;
+  --color-primary: #ff5733ff;
+  --color-primary-content: #ffffff;
+  --color-secondary: #50514fff;
+  --color-secondary-content: #f0f0f0;
+  --color-accent: #ffe066ff;
+  --color-accent-content: #3a3300;
   --color-neutral: #1C1B22;      
   --color-neutral-content: #d9dfe5;
 
@@ -104,4 +117,23 @@ html {
   padding: 0;
   margin: 0;
   background-color: var(--color-accent);
+}
+
+@keyframes pop {
+  0% { transform: scale(1.5); }
+  50% { transform: scale(1.5); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes rainbow {
+  0% { color: red; }
+  34% { color: orange; }
+  78% { color: yellow; }
+  100% { color: red; }
+}
+
+.animate-pop-rainbow {
+  display: inline-block;
+  animation: pop 0.6s ease forwards, rainbow 1s linear infinite;
 }

@@ -54,6 +54,6 @@ class AuthenticationController extends Controller
         $request->session()->regenerateToken();
 
         $redirectUrl = urlencode(route('dashboard'));
-        return redirect("http://192.168.2.221/authify/public/logout?redirect={$redirectUrl}");
+        return redirect("http://192.168.1.27:8080/authify/public/logout?redirect={$redirectUrl}");
     }
 }
