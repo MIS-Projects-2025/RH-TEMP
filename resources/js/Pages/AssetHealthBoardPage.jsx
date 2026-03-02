@@ -6,14 +6,13 @@ import STATUS_CONFIG from "@/Constants/checkItemStatusConfig";
 import { useEditableTable } from "@/Hooks/useEditableTable";
 import formatFriendlyDate from "@/Utils/formatFriendlyDate";
 import { router, usePage } from "@inertiajs/react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FaCaretDown } from "react-icons/fa6";
+import SearchInput from "./SearchInput";
 
 const checklistModalID = "asset-health-checklist-modal";
 
 const LatestResultsCards = ({ latestResults }) => {
-	const location = latestResults;
-
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto">
 			{Object.entries(latestResults).map(([assetName, results]) => {
@@ -22,13 +21,13 @@ const LatestResultsCards = ({ latestResults }) => {
 				return (
 					<div
 						key={assetName}
-						className="card shadow border border-base-content/20 p-2 flex flex-col gap-2"
+						className="card shadow border border-base-content/20 flex flex-col gap-2"
 					>
-						<h2 className="font-bold text-lg">
+						<h2 className="font-bold text-lg bg-base-100 p-2">
 							{assetName}
 							<span className="opacity-50 font-light">@{location}</span>
 						</h2>
-						<div className="flex flex-col gap-1">
+						<div className="flex flex-col gap-1 p-2">
 							{results.map((result) => {
 								const itemName = result?.item_name;
 								const rawStatus = result?.item_status;
@@ -74,7 +73,12 @@ const LatestResultsCards = ({ latestResults }) => {
 };
 
 const AssetHealthBoardPage = () => {
-	const { checklists, selectedChecklist, latestResults } = usePage().props;
+	const {
+		checklists,
+		selectedChecklist,
+		latestResults,
+		search: serverSearch,
+	} = usePage().props;
 	console.log("🚀 ~ AssetHealthBoardPage ~ checklists:", checklists);
 	console.log(
 		"🚀 ~ AssetHealthBoardPage ~ selectedChecklist:",
@@ -82,6 +86,25 @@ const AssetHealthBoardPage = () => {
 	);
 	console.log("🚀 ~ AssetHealthBoardPage ~ latestResults:", latestResults);
 	const checklistItems = selectedChecklist?.checklist_items || [];
+
+	const total = Object.entries(latestResults || {}).length;
+
+	const [searchInput, setSearchInput] = useState(serverSearch || "");
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			router.reload({
+				data: {
+					search: searchInput,
+					page: 1,
+				},
+				preserveState: true,
+				preserveScroll: true,
+			});
+		}, 700);
+
+		return () => clearTimeout(timer);
+	}, [searchInput]);
 
 	const reload = (selectedChecklistID) => {
 		router.reload({
@@ -137,6 +160,18 @@ const AssetHealthBoardPage = () => {
 				buttonSelectorClassName="w-full min-h-8 h-auto btn-soft btn-primary text-left"
 				singleSelect
 			/>
+
+			<div className="flex">
+				<div className="ml-2 flex items-center justify-between">
+					<span className="text-sm">{total} results</span>
+				</div>
+				<SearchInput
+					inputClassName="w-100"
+					placeholder="search by asset name"
+					initialSearchInput={searchInput}
+					onSearchChange={setSearchInput}
+				/>
+			</div>
 
 			<LatestResultsCards
 				latestResults={latestResults || {}}

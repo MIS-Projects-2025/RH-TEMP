@@ -25,7 +25,7 @@ export default function NavLinks({ isCollapse }) {
 		>
 			<SidebarLink
 				href={route("perform.checklist.index")}
-				label="Perform a checklist"
+				label="Perform checklist"
 				icon={<FaPlay className="w-full h-full" />}
 				isIconOnly={isCollapse}
 				linkButtonClassName={"bg-primary btn text-white hover:bg-secondary"}
@@ -33,25 +33,24 @@ export default function NavLinks({ isCollapse }) {
 
 			<SidebarLink
 				href={route("perform.sds-monitoring.index")}
-				label="Perform SDS Monitoring"
+				label="Monitor SDS"
 				icon={<FaPlay className="w-full h-full" />}
 				isIconOnly={isCollapse}
-				linkButtonClassName={"btn-outline btn-primary btn"}
+				linkButtonClassName={"btn-outline btn-primary btn hover:bg-secondary"}
 			/>
 
 			<SidebarLink
 				href={route("perform.restroom-monitoring.index")}
-				label="Perform Restroom Monitoring"
+				label="Monitor Restroom"
 				icon={<FaPlay className="w-full h-full" />}
 				isIconOnly={isCollapse}
-				linkButtonClassName={"btn-outline btn-primary btn"}
+				linkButtonClassName={"btn-outline btn-primary btn hover:bg-secondary"}
 			/>
 
 			<SidebarLink
 				href={route("dashboard")}
 				label="Dashboard"
 				icon={<LuLayoutDashboard className="w-full h-full" />}
-				notifications={5}
 				isIconOnly={isCollapse}
 			/>
 
@@ -59,7 +58,6 @@ export default function NavLinks({ isCollapse }) {
 				href={route("asset-health")}
 				label="Asset Health Board"
 				icon={<LuLayoutDashboard className="w-full h-full" />}
-				notifications={5}
 				isIconOnly={isCollapse}
 			/>
 
@@ -91,7 +89,6 @@ export default function NavLinks({ isCollapse }) {
 				label="Utility Trash"
 				// icon={<LuLayoutDashboard className="w-full h-full" />}
 				icon={<FaTrash className="w-full h-full" />}
-				notifications={5}
 				isIconOnly={isCollapse}
 			/>
 			<Dropdown

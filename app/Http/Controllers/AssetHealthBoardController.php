@@ -20,14 +20,16 @@ class AssetHealthBoardController extends Controller
     {
         $checklists = Checklist::all();
         $selectedChecklistId = $request->input('checklist_id', $checklists->first()?->id);
+        $assetSearchName = $request->input('search', null);
         $selectedChecklist = Checklist::with('checklistItems.item')->find($selectedChecklistId);
         $CheckItemsResultsRepo = new CheckItemsResultRepository();
 
-        $latestResults = $CheckItemsResultsRepo->getlatestCheckItemsStatusByChecklist($selectedChecklistId);
+        $latestResults = $CheckItemsResultsRepo->getlatestCheckItemsStatusByChecklist($selectedChecklistId, $assetSearchName);
 
         return Inertia::render('AssetHealthBoardPage', [
             'latestResults' => $latestResults,
             'checklists' => $checklists,
+            'search' => $assetSearchName,
             'selectedChecklist' => $selectedChecklist
         ]);
     }

@@ -56,58 +56,25 @@ const ASSETS_CATEGORIES = [
 	},
 ];
 
-function StatCard({ statusKey, count }) {
+function StatRow({ statusKey, count }) {
 	const config = STATUS_CONFIG[statusKey];
 	const Icon = config?.icon;
-
 	if (!config) return null;
 
 	return (
 		<div
-			style={{ border: `1px solid ${config.color}22` }}
-			className={clsx(
-				`h-full p-2 flex flex-col justify-between gap-1 relative overflow-hidden transition-all duration-300 cursor-default`,
-				config.bgClass,
-			)}
-			onMouseEnter={(e) => {
-				e.currentTarget.style.borderColor = `${config.color}66`;
-			}}
-			onMouseLeave={(e) => {
-				e.currentTarget.style.borderColor = `${config.color}22`;
-			}}
+			className="flex items-center justify-between px-2 py-1.5"
+			style={{ borderLeft: `3px solid ${config.color}` }}
 		>
-			<div
-				style={{
-					background: config.color,
-					top: -40,
-					right: -40,
-				}}
-				className="absolute w-18 h-28 rounded-full opacity-[0.06] blur-3xl pointer-events-none"
-			/>
-
-			<div className="flex justify-between items-center">
-				<div style={{ color: config.color }} className="shrink-0">
-					{Icon && <Icon size={30} />}
-				</div>
-				<div
-					className={clsx(
-						"text-[42px] font-semibold text-base-content leading-none tracking-tight",
-						{
-							"opacity-25": count === 0,
-						},
-					)}
-					style={{ fontFamily: "'DM Mono', monospace" }}
-				>
-					{String(count)}
-				</div>
+			<div className="flex items-center gap-2">
+				<span style={{ color: config.color }}>
+					{Icon && <Icon size={20} />}
+				</span>
+				<span className="text-xs font-medium capitalize">{config.label}</span>
 			</div>
-
-			<div
-				className="mt-1.5 text-[13px] text-base-content text-center font-medium capitalize tracking-wide"
-				style={{ fontFamily: "'DM Sans', sans-serif" }}
-			>
-				{config.label}
-			</div>
+			<span className="text-lg font-semibold opacity-75 font-mono">
+				{count}
+			</span>
 		</div>
 	);
 }
@@ -203,11 +170,11 @@ function SpeedometerCard({ entry, speedometerData, maxValue, power }) {
 	return (
 		<div
 			className={clsx(
-				"flex relative flex-col items-center w-30 p-1 transition-all",
+				"flex relative flex-col items-center w-22 p-1 transition-all",
 				is_no_schedule && "opacity-60",
 			)}
 		>
-			<div className="absolute top-2 left-2 flex flex-col gap-1">
+			<div className="absolute top-2 flex justify-between w-full gap-1">
 				<PowerStatusBadge status={powerStatus} />
 				<ScheduleBadge isNoSchedule={is_no_schedule} isDue={is_due} />
 			</div>
@@ -224,16 +191,20 @@ function SpeedometerCard({ entry, speedometerData, maxValue, power }) {
 			/>
 
 			{/* Asset name + running hours — hoverable */}
-			<div data-tooltip-id={tooltipId} className="text-center cursor-default">
-				<p
+			<div
+				data-tooltip-id={tooltipId}
+				className="w-full text-center cursor-default"
+			>
+				<div
 					className={clsx(
-						`text-lg leading-5 font-bold ${isInvalid ? "text-base-content italic" : "text-gray-800"}`,
+						`flex justify-center text-lg truncate leading-5 font-bold ${isInvalid ? "text-base-content italic" : "text-gray-800"}`,
 					)}
 					style={{ color: getColorBasedOnStatus() }}
 				>
-					{isInvalid ? "invalid" : `${hours.toLocaleString()} hrs`}
-				</p>
-				<p className="text-xs font-semibold text-base-content truncate w-full">
+					{isInvalid ? "invalid" : `${hours.toLocaleString()}`}
+					<p className="opacity-75 text-xs">hrs</p>
+				</div>
+				<p className="text-xs font-semibold text-base-content break-all w-full">
 					{entry.asset_name}
 				</p>
 			</div>
@@ -287,9 +258,11 @@ function SpeedometerCard({ entry, speedometerData, maxValue, power }) {
 // ─── Group section (Vacuum / Air Compressor) ──────────────────────────────────
 function SpeedometerGroup({ title, entries, speedometerData, maxValue }) {
 	return (
-		<section className="border border-base-content/10 p-2">
-			<h2 className="text-base-content">{title}</h2>
-			<div className="flex gap-2">
+		<section className="">
+			<h2 className="text-base-content text-center border-b border-b-base-content/20">
+				{title}
+			</h2>
+			<div className="flex gap-2 justify-center">
 				{Object.entries(entries).map(([assetName, items]) => {
 					const runningHours = items.find(
 						(item) => item.item_name.toLowerCase() === "running hours",
@@ -586,32 +559,24 @@ export default function Dashboard() {
 				</div>
 
 				<div className="grid grid-cols-2 w-full gap-2">
-					<div>
+					<div className=" border p-2 border-base-content/10">
 						<div className="flex justify-between items-end">
-							<h1>Asset Status</h1>
+							<h1 className="font-semibold">Asset Status</h1>
 							<div className="opacity-50 text-xs">Unique assets per status</div>
 						</div>
-						<div
-							style={{
-								display: "grid",
-								gridTemplateColumns: "repeat(6, minmax(50px, 1fr))",
-								gridTemplateRows: "repeat(2, auto)",
-								gap: "8px",
-							}}
-						>
+						<div className="grid grid-cols-2 gap-1">
 							{all_latest_status_results?.map((status, i) => (
-								<div key={i} style={{ transitionDelay: `${i * 60}ms` }}>
-									<StatCard
-										statusKey={(status?.item_status ?? "").toLowerCase()}
-										count={status?.asset_count ?? 0}
-									/>
-								</div>
+								<StatRow
+									key={i}
+									statusKey={(status?.item_status ?? "").toLowerCase()}
+									count={status?.asset_count ?? 0}
+								/>
 							))}
 						</div>
 					</div>
 
-					<div>
-						<h1>Running Hours</h1>
+					<div className="border border-base-content/10 p-2">
+						<h1 className="font-semibold text-center">Running Hours</h1>
 						<SpeedometerGroup
 							title="Vacuum"
 							entries={vacuum_latest_results}

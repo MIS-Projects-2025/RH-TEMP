@@ -69,9 +69,10 @@ class CheckItemsResultRepository
     ]);
   }
 
-  public static function getLatestCheckItemsStatusByChecklist(int $checklistId)
+  public static function getLatestCheckItemsStatusByChecklist(int $checklistId, ?string $assetNameSearch = null)
   {
     return self::getLatestResults($checklistId, [])
+      ->when($assetNameSearch, fn($q) => $q->where('a.code', 'like', '%' . $assetNameSearch . '%'))
       ->get()
       ->groupBy(fn($row) => strtolower($row->asset_name));
   }
