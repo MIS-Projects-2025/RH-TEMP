@@ -143,15 +143,20 @@ function LocationList() {
 	};
 
 	const saveChanges = async () => {
-		await mutate(route("api.locations.bulkUpdate"), {
-			method: "PATCH",
-			body: editedRows,
-		});
+		try {
+			await mutate(route("api.locations.bulkUpdate"), {
+				method: "PATCH",
+				body: editedRows,
+			});
 
-		document.getElementById(saveChangeIDModal).close();
+			document.getElementById(saveChangeIDModal).close();
 
-		toast.success("Changes updated successfully!");
-		refresh();
+			toast.success("Changes updated successfully!");
+			refresh();
+		} catch (error) {
+			toast.error(error.message);
+			console.error(error);
+		}
 	};
 
 	const goToPage = (page) => {
