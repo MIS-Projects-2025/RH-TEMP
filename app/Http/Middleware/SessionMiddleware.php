@@ -65,7 +65,7 @@ class SessionMiddleware
       'generated_at'  => $user->generated_at,
     ]]);
 
-    session()->save();
+    // session()->save();
 
     $cookie = cookie('sso_token', $user->token, 60 * 24 * 7, '/', null, false, true);
     $request->setUserResolver(fn() => (object) session('emp_data'));

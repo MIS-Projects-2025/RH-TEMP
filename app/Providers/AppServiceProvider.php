@@ -20,9 +20,5 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
-    {
-        Vite::prefetch(concurrency: 3);
-        Checklist::observe(ChecklistObserver::class);
-    }
+    public function boot(): void {}
 }

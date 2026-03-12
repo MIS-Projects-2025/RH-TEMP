@@ -27,6 +27,7 @@ class AuthMiddleware
         ]);
 
         $user = $request->attributes->get('auth_user');
+        Log::info('auth_user', (array) $user);
 
         if (!$user) {
             abort(403);

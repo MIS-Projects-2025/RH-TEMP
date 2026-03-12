@@ -70,9 +70,9 @@
   --color-neutral: #1C1B22;      
   --color-neutral-content: #d9dfe5;
 
-  --radius-selector: 0rem;
-  --radius-field: 0rem;
-  --radius-box: 0rem;
+  --radius-selector: 1rem;
+  --radius-field: 1rem;
+  --radius-box: 1rem;
   --size-selector: 0.1875rem;
   --size-field: 0.1875rem;
   --border: 0.5px;
@@ -98,9 +98,9 @@
   --color-neutral: #1C1B22;      
   --color-neutral-content: #d9dfe5;
 
-  --radius-selector: 0rem;
-  --radius-field: 0rem;
-  --radius-box: 0rem;
+  --radius-selector: 1rem;
+  --radius-field: 1rem;
+  --radius-box: 1rem;
   --size-selector: 0.1875rem;
   --size-field: 0.1875rem;
   --border: 0.5px;

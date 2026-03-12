@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 
 Schedule::command('inspire')->everyFiveSeconds();
+Schedule::command('devices:save-logs')->everyThirtyMinutes();

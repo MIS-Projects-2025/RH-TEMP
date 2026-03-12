@@ -35,8 +35,15 @@ class ApiPermissionMiddleware
     $dept = strtolower($currentUser?->emp_dept ?? '');
     $job_title = strtolower($currentUser?->emp_jobtitle ?? '');
 
-    $hasAccess = str_contains($job_title, 'facility technician')
-      || str_contains($job_title, 'facility engineer');
+    $allowedDepartments = [
+      'equipment engineering',
+      'mis',
+      'process engineering',
+      'quality assurance',
+      'quality management system',
+    ];
+
+    $hasAccess = in_array($dept, $allowedDepartments);
 
     if ($dept !== 'mis' && !$hasAccess) {
       return response()->json([

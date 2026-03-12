@@ -99,7 +99,7 @@ export default function Sidebar() {
 							isSidebarCollapsed && "hidden",
 						)}
 					>
-						<p className="pt-0.5 pl-1">PPC Portal</p>
+						<p className="pt-0.5 pl-1">RH Temp Monitoring</p>
 					</Link>
 					<button
 						type="button"
