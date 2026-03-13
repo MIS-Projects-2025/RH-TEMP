@@ -18,6 +18,13 @@ class DeviceController extends Controller
         ]);
     }
 
+    public function setup()
+    {
+        return Inertia::render('Devices/Setup', [
+            'devices' => Device::orderBy('location')->get(),
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
