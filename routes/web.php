@@ -8,6 +8,8 @@ use App\Http\Middleware\RoutePermissionMiddleware;
 use App\Http\Controllers\General\ProfileController;
 use App\Http\Controllers\ThresholdProfileController;
 use Inertia\Inertia;
+use App\Http\Middleware\AuthMiddleware;
+use App\Http\Middleware\SessionMiddleware;
 
 Route::get('/', function () {
     return redirect()->route('devices.index');
@@ -18,7 +20,8 @@ require __DIR__ . '/auth.php';
 
 Route::get('/home', fn() => Inertia::render('Home'))->name('home');
 
-Route::get('/dashboard',       [StatusController::class, 'index'])->name('dashboard');
+Route::get('/dashboard',       [StatusController::class, 'index'])->name('dashboard')
+    ->withoutMiddleware([AuthMiddleware::class, SessionMiddleware::class]);
 Route::post('/status',         [StatusController::class, 'fetchStatus'])->name('status.fetch');
 Route::post('/status/save-logs', [StatusController::class, 'saveLogs'])->name('status.saveLogs');
 Route::post('/dashboard/log',    [StatusController::class, 'log'])->name('dashboard.log');
