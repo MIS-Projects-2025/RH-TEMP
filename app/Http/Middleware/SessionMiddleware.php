@@ -6,6 +6,8 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Cookie;
 
 class SessionMiddleware
 {
@@ -46,12 +48,13 @@ class SessionMiddleware
       abort(503, 'Authentication service unavailable.');
     }
 
-    $request->attributes->set('auth_user', $user);
-
     if (!$user) {
       session()->forget('emp_data');
-      return $this->redirectToLogin($request)->withCookie(cookie()->forget('sso_token'));
+      Cookie::queue(Cookie::forget('sso_token'));
+      return $this->redirectToLogin($request);
     }
+
+    $request->attributes->set('auth_user', $user);
 
     session(['emp_data' => [
       'token'         => $user->token,
@@ -86,6 +89,6 @@ class SessionMiddleware
   private function redirectToLogin(Request $request)
   {
     $redirectUrl = urlencode($request->fullUrl());
-    return redirect("http://192.168.1.27:8080/authify/public/login?redirect={$redirectUrl}");
+    return Inertia::location("http://192.168.2.221:8200/login?redirect={$redirectUrl}");
   }
 }

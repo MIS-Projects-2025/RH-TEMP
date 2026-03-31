@@ -20,7 +20,7 @@ class ApiPermissionMiddleware
     $token = $request->query('key') ?? $request->bearerToken() ?? session('emp_data.token');
     if (!$token) {
       $redirectUrl = urlencode($request->fullUrl());
-      return redirect("http://192.168.1.27:8080/authify/public/login?redirect={$redirectUrl}");
+      return redirect("http://192.168.2.221:8200/login?redirect={$redirectUrl}");
     }
 
     $cacheKey = 'authify_user_' . $token;

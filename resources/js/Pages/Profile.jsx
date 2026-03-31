@@ -26,7 +26,7 @@ export default function Profile({ profile, errors }) {
 					const token = localStorage.getItem("authify-token");
 					localStorage.removeItem("authify-token");
 					router.get(route("logout"));
-					window.location.href = `http://192.168.1.27:8080/authify/public/logout?key=${encodeURIComponent(
+					window.location.href = `http://192.168.2.221:8200/logout?key=${encodeURIComponent(
 						token,
 					)}&redirect=${encodeURIComponent(route("dashboard"))}`;
 				},
