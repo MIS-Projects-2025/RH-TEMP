@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Facades\Http;
 
 class DeviceController extends Controller
 {
@@ -88,5 +89,32 @@ class DeviceController extends Controller
             }
             fclose($handle);
         }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    public function allDevicesHealth()
+    {
+        $devices = Device::all(['id', 'location', 'ip']);
+
+        $results = $devices->map(function ($device) {
+            if (blank($device->ip)) {
+                return ['id' => $device->id, 'location' => $device->location, 'reachable' => false];
+            }
+
+            try {
+                $response = Http::timeout(5)->get("http://{$device->ip}");
+                $reachable = $response->successful();
+            } catch (\Exception) {
+                $reachable = false;
+            }
+
+            return [
+                'id'        => $device->id,
+                'location'  => $device->location,
+                'ip'        => $device->ip,
+                'reachable' => $reachable,
+            ];
+        });
+
+        return response()->json($results);
     }
 }

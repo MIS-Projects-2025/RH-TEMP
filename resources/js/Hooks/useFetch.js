@@ -1,126 +1,78 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { router } from "@inertiajs/react";
 
 export function useFetch(url, options = {}) {
-  const fetchIdRef = useRef(0);
-  const { params = {}, auto = true } = options;
-  
-  const [data, setData] = useState(null);
-  const [isLoading, setIsLoading] = useState(auto);
-  const [errorMessage, setErrorMessage] = useState(null);
-  const abortControllerRef = useRef(null);
+	const { params = {}, auto = true } = options;
+	const memoParams = useMemo(() => params, [JSON.stringify(params)]);
 
-  const buildUrlWithParams = (baseUrl, params) => {
-    const query = new URLSearchParams(params).toString();
-    return query ? `${baseUrl}?${query}` : baseUrl;
-  };
-  
-  const fetchData = async (currentParams = params) => {
-    const id = ++fetchIdRef.current;
+	const [data, setData] = useState(null);
+	const [isLoading, setIsLoading] = useState(auto);
+	const [errorMessage, setErrorMessage] = useState(null);
 
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    
-    setIsLoading(true);
-    setErrorMessage(null);
-    
-    try {
-      const fetchUrl = buildUrlWithParams(url, currentParams);
-      const token = localStorage.getItem("authify-token");
-      const response = await fetch(fetchUrl, {
-        method: "GET",
-        headers: {
-          "Accept": 'application/json',
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        signal: controller.signal,
-      });
-      
-      let result;
-      try {
-        result = await response.json();
-      } catch (jsonErr) {
-        const error = new Error("Invalid JSON response from server");
-        error.status = response.status;
-        throw error;
-      }
-      
-      if (!response.ok || (result && result.status === "error")) {
-        const error = new Error(result?.message || `HTTP error: ${response.status}`);
-        error.status = response.status;
-        error.data = result;
-        throw error;
-      }
-      
-      setData(result);
-    } catch (error) {
-      console.log("🚀 ~ fetchData ~ err:", error)
-      if (error.name !== "AbortError") {
-        setErrorMessage(error.message);
-      }
-    } finally {
-      if (id === fetchIdRef.current) {
-        setIsLoading(false);
-      }
-    }
-  };
+	const fetchIdRef = useRef(0);
+	const abortControllerRef = useRef(null);
 
+	const fetchData = useCallback(
+		async (currentParams = memoParams) => {
+			const id = ++fetchIdRef.current;
 
-  useEffect(() => {
-  if (auto) {
-    fetchData(params);
-  }
+			if (abortControllerRef.current) abortControllerRef.current.abort();
+			const controller = new AbortController();
+			abortControllerRef.current = controller;
 
-  // const handleInertiaStart = (event) => {
-  //   // Only abort if the navigation is to a different page
-  //   if (abortControllerRef.current) {
-  //     abortControllerRef.current.abort();
-  //   }
-  // };
-  
-  // const removeListener = router.on('start', handleInertiaStart);
-  
-  // return () => {
-  //   removeListener();
-  //   abortControllerRef.current?.abort();
-  // };
-}, [url, auto]);
+			setIsLoading(true);
+			setErrorMessage(null);
 
-  // useEffect(() => {
-  //   if (auto) {
-  //     fetchData(params);
-  //   }
+			try {
+				const query = new URLSearchParams(currentParams).toString();
+				const fetchUrl = query ? `${url}?${query}` : url;
+				const token = localStorage.getItem("authify-token");
 
-  //   const handleInertiaStart = () => {
-  //     // 2. Abort the fetch when a new Inertia navigation starts
-  //     // This will run *before* the component unmounts on navigation.
-  //     if (abortControllerRef.current) {
-  //       abortControllerRef.current.abort();
-  //     }
-  //   };
-    
-    
-  //   const removeInertiaListener = router.on('start', handleInertiaStart); 
-  //   return () => {
-  //     removeInertiaListener(); 
-  //     abortControllerRef.current?.abort();
-  //   };
+				const response = await fetch(fetchUrl, {
+					signal: controller.signal,
+					headers: {
+						Accept: "application/json",
+						"Content-Type": "application/json",
+						...(token && { Authorization: `Bearer ${token}` }),
+					},
+				});
 
-  //   return () => {
-  //     abortControllerRef.current?.abort();
-  //   };
-  // }, [url, auto]);
+				const result = await response.json();
 
-  return {
-    data, 
-    isLoading, 
-    errorMessage, 
-    fetch: (overrideParams = params) => fetchData(overrideParams), 
-    abort: () => abortControllerRef.current?.abort() 
-  };
+				if (!response.ok) {
+					const error = new Error(
+						result?.message || `Error ${response.status}`,
+					);
+					error.status = response.status;
+					error.data = result;
+					throw error;
+				}
+
+				setData(result);
+				return result;
+			} catch (error) {
+				if (error.name !== "AbortError") {
+					setErrorMessage(error.message);
+				}
+			} finally {
+				if (id === fetchIdRef.current) {
+					setIsLoading(false);
+				}
+			}
+		},
+		[url, memoParams],
+	);
+
+	useEffect(() => {
+		if (auto) fetchData();
+		return () => abortControllerRef.current?.abort();
+	}, [fetchData, auto]);
+
+	return {
+		data,
+		isLoading,
+		errorMessage,
+		fetch: fetchData,
+		abort: () => abortControllerRef.current?.abort(),
+	};
 }

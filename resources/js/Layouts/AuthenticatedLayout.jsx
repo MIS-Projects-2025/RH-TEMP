@@ -3,6 +3,7 @@ import NavBar from "@/Components/NavBar";
 import Sidebar from "@/Components/sidebar/SideBar";
 import { usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
+import ExportGlobalListener from "@/Listener/ExportGlobalListener";
 
 export default function AuthenticatedLayout({ header, children }) {
 	const { url } = usePage();
@@ -16,6 +17,7 @@ export default function AuthenticatedLayout({ header, children }) {
 
 	return (
 		<div className="flex bg-base-200 h-screen text-sm">
+			<ExportGlobalListener />
 			<Sidebar />
 			<div className="h-full flex flex-col flex-1 overflow-y-hidden">
 				<NavBar />

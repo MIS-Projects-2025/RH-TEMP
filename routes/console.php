@@ -9,5 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 
-Schedule::command('inspire')->everyFiveSeconds();
-Schedule::command('devices:save-logs')->everyThirtyMinutes();
+Schedule::command('app:fetch-device-recordings')->everyTwoMinutes();

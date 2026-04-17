@@ -10,6 +10,7 @@ use App\Http\Controllers\ThresholdProfileController;
 use Inertia\Inertia;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\SessionMiddleware;
+use App\Http\Controllers\ExportController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -44,6 +45,7 @@ Route::prefix('threshold-profiles')->group(
 Route::prefix('devices')->group(function () {
     Route::middleware(RoutePermissionMiddleware::class)->group(function () {
         Route::get('/',       [DeviceController::class, 'index'])->name('devices.index');
+        Route::get('/health',       [DeviceController::class, 'allDevicesHealth'])->name('devices.health');
         Route::put('/{device}/threshold-profile', [ThresholdProfileController::class, 'assignToDevice']);
         Route::get('/setup',  [DeviceController::class, 'setup'])->name('devices.setup');
         Route::post('/',           [DeviceController::class, 'store'])->name('devices.store');
@@ -51,13 +53,22 @@ Route::prefix('devices')->group(function () {
         Route::delete('/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
     });
 });
-// Route::prefix('devices')->group(function () {
-//     Route::get('/',       [DeviceController::class, 'index'])->name('devices.index');
-//     Route::get('/setup',  [DeviceController::class, 'setup'])->name('devices.setup');
-//     Route::post('/',      [DeviceController::class, 'store'])->name('devices.store');
-//     Route::put('/{device}',    [DeviceController::class, 'update'])->name('devices.update');
-//     Route::delete('/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
-// });
+
+Route::get('/export/{job}/download', [ExportController::class, 'download'])
+    ->name('export.download')
+    ->withoutMiddleware([AuthMiddleware::class, SessionMiddleware::class]);
+
+Route::prefix('export')->group(function () {
+    Route::post('/', [ExportController::class, 'dispatch'])->name('export.recordings');
+    Route::get('/index', [ExportController::class, 'index'])->name('export.index');
+    Route::get('/{job}/status', [ExportController::class, 'status'])->name('export.status');
+});
+
+Route::prefix('devices')->group(function () {
+    Route::middleware(RoutePermissionMiddleware::class)->group(function () {
+        Route::get('/recordings', [DeviceController::class, 'index'])->name('');
+    });
+});
 
 Route::get("/profile", [ProfileController::class, 'index'])->name('profile.index');
 

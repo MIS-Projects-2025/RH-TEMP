@@ -1,7 +1,7 @@
 import Dropdown from "@/Components/sidebar/Dropdown";
 import SidebarLink from "@/Components/sidebar/SidebarLink";
 import { usePage } from "@inertiajs/react";
-import { BiCalendar, BiTask } from "react-icons/bi";
+import { BiCalendar, BiExport, BiTask } from "react-icons/bi";
 import {
 	FaCheckCircle,
 	FaFileAlt,
@@ -54,6 +54,13 @@ export default function NavLinks({ isCollapse }) {
 				href={route("devices.setup")}
 				label="Setup"
 				icon={<IoIosSettings className="w-full h-full" />}
+				isIconOnly={isCollapse}
+			/>
+
+			<SidebarLink
+				href={route("export.index")}
+				label="Export Data"
+				icon={<BiExport className="w-full h-full" />}
 				isIconOnly={isCollapse}
 			/>
 

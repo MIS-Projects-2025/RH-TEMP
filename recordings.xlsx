@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="refresh" content="0;url='http://192.168.2.221:8200/login?redirect=http%3A%2F%2Flocalhost%3A8000%2Fexport%2F1%2Fdownload'" />
+
+        <title>Redirecting to http://192.168.2.221:8200/login?redirect=http%3A%2F%2Flocalhost%3A8000%2Fexport%2F1%2Fdownload</title>
+    </head>
+    <body>
+        Redirecting to <a href="http://192.168.2.221:8200/login?redirect=http%3A%2F%2Flocalhost%3A8000%2Fexport%2F1%2Fdownload">http://192.168.2.221:8200/login?redirect=http%3A%2F%2Flocalhost%3A8000%2Fexport%2F1%2Fdownload</a>.
+    </body>
+</html>
