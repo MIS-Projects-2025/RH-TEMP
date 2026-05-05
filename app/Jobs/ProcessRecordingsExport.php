@@ -273,11 +273,13 @@ class ProcessRecordingsExport implements ShouldQueue
                 $sqrd,
             ], null, $col(0) . $dataRow);
 
-            $sheet->getStyle($col(5) . $dataRow)->getNumberFormat()->setFormatCode($valueFormatCode);
-            $sheet->getStyle($col(6) . $dataRow)->getNumberFormat()->setFormatCode($devFormatCode);
-
             $dataRow++;
         }
+
+        $sheet->getStyle($col(5) . ($headerRow + 1) . ':' . $col(5) . ($dataRow - 1))
+            ->getNumberFormat()->setFormatCode($valueFormatCode);
+        $sheet->getStyle($col(6) . ($headerRow + 1) . ':' . $col(6) . ($dataRow - 1))
+            ->getNumberFormat()->setFormatCode($devFormatCode);
 
         $valueRange = $col(5) . ($startRow + 2) . ':' . $col(5) . ($dataRow - 1);
 
