@@ -21,14 +21,13 @@ use PhpOffice\PhpSpreadsheet\Chart\{
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Facades\Log;
-use App\Models\Recording;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Style\Conditional;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Settings;
-use Symfony\Component\Cache\Adapter\RedisAdapter;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 
 class ProcessRecordingsExport implements ShouldQueue
@@ -48,10 +47,9 @@ class ProcessRecordingsExport implements ShouldQueue
     {
         $this->exportJob->update(['status' => 'processing', 'progress' => 'Fetching all devices...']);
 
-        $redisConnection = \Illuminate\Support\Facades\Redis::connection()->client();
-        $pool = new RedisAdapter($redisConnection);
-        $cache = new Psr16Cache($pool);
-        Settings::setCache($cache);
+        $fsPool  = new FilesystemAdapter('phpspreadsheet', 0, storage_path('framework/cache'));
+        $fsCache = new Psr16Cache($fsPool);
+        Settings::setCache($fsCache);
 
         $params  = $this->exportJob->params;
         $date    = Carbon::parse($params['date']);
