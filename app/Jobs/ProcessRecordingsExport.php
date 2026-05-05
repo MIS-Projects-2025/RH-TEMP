@@ -27,6 +27,9 @@ use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Style\Conditional;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Settings;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
+use Symfony\Component\Cache\Psr16Cache;
 
 class ProcessRecordingsExport implements ShouldQueue
 {
@@ -44,6 +47,11 @@ class ProcessRecordingsExport implements ShouldQueue
     public function handle(OmegaIsdService $omega): void
     {
         $this->exportJob->update(['status' => 'processing', 'progress' => 'Fetching all devices...']);
+
+        $redisConnection = \Illuminate\Support\Facades\Redis::connection()->client();
+        $pool = new RedisAdapter($redisConnection);
+        $cache = new Psr16Cache($pool);
+        Settings::setCache($cache);
 
         $params  = $this->exportJob->params;
         $date    = Carbon::parse($params['date']);
@@ -103,6 +111,7 @@ class ProcessRecordingsExport implements ShouldQueue
                 $sheet->setCellValue('A1', "Device unreachable: {$reason}");
                 $this->updateOverviewRow($overview, $overviewRow, $device, 'Unreachable', 0, 'FFC7CE');
                 $overviewRow++;
+
                 continue;
             }
 
@@ -118,6 +127,8 @@ class ProcessRecordingsExport implements ShouldQueue
                 $this->updateOverviewRow($overview, $overviewRow, $device, 'OK', $records->count(), 'C6EFCE');
             }
             $overviewRow++;
+
+            unset($records);
         }
 
         foreach (range('A', 'E') as $col) {
@@ -130,6 +141,9 @@ class ProcessRecordingsExport implements ShouldQueue
         $writer = new Xlsx($spreadsheet);
         $writer->setIncludeCharts(true);
         $writer->save(storage_path('app/' . $path));
+
+        $spreadsheet->disconnectWorksheets();
+        unset($spreadsheet);
 
         $this->exportJob->update([
             'status'       => 'done',
