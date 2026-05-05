@@ -8,9 +8,14 @@ export const useExportStore = create(
 			progress: "0 / 0",
 			status: "idle",
 			fileUrl: null,
+			error: null,
 
 			startMonitoring: (id) =>
-				set({ activeJobId: id, status: "processing", fileUrl: null }),
+				set({
+					activeJobId: id,
+					status: "processing",
+					fileUrl: null,
+				}),
 
 			updateStatus: (data) =>
 				set({
@@ -26,6 +31,8 @@ export const useExportStore = create(
 					fileUrl: null,
 					progress: "0 / 0",
 				}),
+
+			setError: (error) => set({ error: error }),
 		}),
 		{ name: "export-storage" },
 	),

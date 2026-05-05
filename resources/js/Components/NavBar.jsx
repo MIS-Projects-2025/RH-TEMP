@@ -9,16 +9,14 @@ import clsx from "clsx";
 
 export default function NavBar() {
 	const { emp_data } = usePage().props;
-	const { status, progress, fileUrl, stopMonitoring } = useExportStore();
 
-	// Parse progress string "2 / 32 devices"
-	const [current, total] = progress
-		? progress.split(" / ").map((val) => parseInt(val, 10))
-		: [0, 0];
-	console.log("🚀 ~ NavBar ~ total:", total);
-	console.log("🚀 ~ NavBar ~ current:", current);
-	const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
-	console.log("🚀 ~ NavBar ~ percentage:", percentage);
+	// const { status, progress, fileUrl, stopMonitoring } = useExportStore();
+
+	// // Parse progress string "2 / 32 devices"
+	// const [current, total] = progress
+	// 	? progress.split(" / ").map((val) => parseInt(val, 10))
+	// 	: [0, 0];
+	// const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
 
 	const logout = () => {
 		localStorage.clear();
@@ -31,7 +29,7 @@ export default function NavBar() {
 			<div className="px-4">
 				<div className="flex justify-end items-center h-12.5 space-x-4">
 					{/* --- EXPORT PROGRESS SECTION --- */}
-					{status !== "idle" && (
+					{/* {status !== "idle" && (
 						<div className="flex items-center">
 							<button
 								type="button"
@@ -107,7 +105,7 @@ export default function NavBar() {
 								)}
 							</ul>
 						</div>
-					)}
+					)} */}
 
 					{/* --- USER DROPDOWN SECTION --- */}
 					<div className="dropdown dropdown-end">

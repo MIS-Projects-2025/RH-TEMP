@@ -38,6 +38,8 @@ export default function ExportRecordings() {
 		updateStatus,
 		activeJobId,
 		progress,
+		error: exportError,
+		setError,
 		status,
 	} = useExportStore();
 
@@ -47,7 +49,6 @@ export default function ExportRecordings() {
 	const [period, setPeriod] = useState("day");
 
 	const [fileUrl, setFileUrl] = useState(null);
-	const [error, setError] = useState(null);
 	const [loading, setLoading] = useState(false);
 	const [health, setHealth] = useState([]);
 
@@ -116,6 +117,40 @@ export default function ExportRecordings() {
 	const [current, total] = progress
 		? progress.split(" / ").map((val) => parseInt(val, 10))
 		: [0, 0];
+
+	useEffect(() => {
+		if (!activeJobId) return;
+
+		const interval = setInterval(async () => {
+			try {
+				const res = await fetch(`/export/${activeJobId}/status`);
+				const job = await res.json();
+				console.log("🚀 ~ ExportRecordings ~ job:", job);
+
+				updateStatus({
+					status: job.status,
+					progress: job.progress,
+					file_url: job.file_url,
+				});
+
+				if (job.status === "done") {
+					clearInterval(interval);
+					stopMonitoring();
+					window.location.href = `/export/${activeJobId}/download`;
+				}
+
+				if (job.status === "failed") {
+					clearInterval(interval);
+					stopMonitoring();
+					setError(job.error ?? "Export failed.");
+				}
+			} catch {
+				// network blip — just wait for next tick
+			}
+		}, 3000);
+
+		return () => clearInterval(interval);
+	}, [activeJobId]);
 
 	return (
 		<div className="max-w-lg mx-auto py-10 px-4">
@@ -213,15 +248,29 @@ export default function ExportRecordings() {
 
 				{/* Summary */}
 				<div className="rounded-md bg-gray-50 px-4 py-3 mb-5 text-sm text-gray-500">
-					Exporting{" "}
-					<span className="font-medium text-gray-800">
-						{PERIODS.find((p) => p.value === period)?.label}
-					</span>{" "}
-					of data from{" "}
-					<span className="font-medium text-gray-800">
-						{MONTHS[month - 1]} {clampedDay}, {year}
-					</span>{" "}
-					across all devices.
+					{(() => {
+						const end = new Date(year, month - 1, clampedDay);
+						const periodDays = { day: 0, week: 6, month: 29, year: 364 };
+						const start = new Date(end);
+						start.setDate(start.getDate() - periodDays[period]);
+
+						const fmt = (d) =>
+							d.toLocaleDateString("en-US", {
+								month: "short",
+								day: "numeric",
+								year: "numeric",
+							});
+
+						return (
+							<>
+								Exporting{" "}
+								<span className="font-medium text-gray-800">
+									{period === "day" ? fmt(end) : `${fmt(start)} – ${fmt(end)}`}
+								</span>{" "}
+								across all devices.
+							</>
+						);
+					})()}
 				</div>
 
 				{/* Export button */}
@@ -290,8 +339,8 @@ export default function ExportRecordings() {
 						</p>
 					)}
 
-					{status === "failed" && error && (
-						<p className="text-sm text-red-500 mt-1.5">{error}</p>
+					{status === "failed" && exportError && (
+						<p className="text-sm text-red-500 mt-1.5">{exportError}</p>
 					)}
 				</div>
 			)}
