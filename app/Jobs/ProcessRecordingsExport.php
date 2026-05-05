@@ -95,6 +95,8 @@ class ProcessRecordingsExport implements ShouldQueue
         $this->applyHeaderStyle($overview, 'A4:E4');
 
         $overviewRow = 5;
+        $total = $devices->count();
+        $done  = 0;
 
         foreach ($devices as $device) {
             $response = $responses[$device->id];
@@ -127,6 +129,12 @@ class ProcessRecordingsExport implements ShouldQueue
                 $sheet->getTabColor()->setRGB('00B050');
                 $this->updateOverviewRow($overview, $overviewRow, $device, 'OK', $records->count(), 'C6EFCE');
             }
+
+            $done++;
+            $this->exportJob->update([
+                'progress' => "Building spreadsheet... ({$done}/{$total} devices)",
+            ]);
+
             $overviewRow++;
 
             unset($records);
@@ -150,6 +158,14 @@ class ProcessRecordingsExport implements ShouldQueue
             'status'       => 'done',
             'file_path'    => $path,
             'completed_at' => now(),
+        ]);
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        $this->exportJob->update([
+            'status' => 'failed',
+            'error'  => $exception->getMessage(),
         ]);
     }
 
