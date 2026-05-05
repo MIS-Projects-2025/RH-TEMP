@@ -45,6 +45,8 @@ class ProcessRecordingsExport implements ShouldQueue
 
     public function handle(OmegaIsdService $omega): void
     {
+        ini_set('memory_limit', '512M');
+
         $this->exportJob->update(['status' => 'processing', 'progress' => 'Fetching all devices...']);
 
         $fsPool  = new FilesystemAdapter('phpspreadsheet', 0, storage_path('framework/cache'));
@@ -96,6 +98,7 @@ class ProcessRecordingsExport implements ShouldQueue
 
         foreach ($devices as $device) {
             $response = $responses[$device->id];
+            unset($responses[$device->id]);
 
             $sheet = $spreadsheet->createSheet();
             $sheet->setTitle(substr(trim($device->name) ?: "Dev-{$device->id}", 0, 31));
