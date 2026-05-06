@@ -39,7 +39,7 @@ class ProcessRecordingsExport implements ShouldQueue
         'rh'   => ['uar' => 62.0, 'lar' => 48.0, 'ucl' => 60.0, 'lcl' => 50.0],
     ];
 
-    public int $timeout = 300;
+    public int $timeout = 7200; // 2 hours
 
     public function __construct(public ExportJob $exportJob) {}
 
@@ -273,12 +273,11 @@ class ProcessRecordingsExport implements ShouldQueue
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setRGB('FFEB9C');
 
+        $rows = [];
         foreach ($records as $record) {
-            $value = $record[$valueKey];
-            $dev   = $value - $mean;
-            $sqrd  = ($dev) ** 2;
-
-            $sheet->fromArray([
+            $value  = $record[$valueKey];
+            $dev    = $value - $mean;
+            $rows[] = [
                 $record['recorded_at']->format('m/d/y h:i:s A'),
                 $limits['uar'],
                 $limits['lar'],
@@ -286,11 +285,11 @@ class ProcessRecordingsExport implements ShouldQueue
                 $limits['lcl'],
                 $value,
                 $dev,
-                $sqrd,
-            ], null, $col(0) . $dataRow);
-
-            $dataRow++;
+                ($dev) ** 2,
+            ];
         }
+
+        $sheet->fromArray($rows, null, $col(0) . ($headerRow + 1));
 
         $sheet->getStyle($col(5) . ($headerRow + 1) . ':' . $col(5) . ($dataRow - 1))
             ->getNumberFormat()->setFormatCode($valueFormatCode);

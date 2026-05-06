@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
 import { useFetch } from "@/Hooks/useFetch";
 import { useExportStore } from "@/Store/useExportStore";
+import { useToast } from "./useToast";
 
 const PERIODS = [
 	{ value: "day", label: "1 Day" },
@@ -42,6 +43,7 @@ export default function ExportRecordings() {
 		setError,
 		status,
 	} = useExportStore();
+	const toast = useToast();
 
 	const [year, setYear] = useState(today.getFullYear());
 	const [month, setMonth] = useState(today.getMonth() + 1);
@@ -136,6 +138,7 @@ export default function ExportRecordings() {
 				if (job.status === "done") {
 					clearInterval(interval);
 					stopMonitoring();
+					toast.success("Export completed! Downloading...");
 					window.location.href = `/export/${activeJobId}/download`;
 				}
 
@@ -319,7 +322,7 @@ export default function ExportRecordings() {
 							{status === "done" && "Done"}
 							{status === "failed" && "Failed"}
 						</div>
-						{progress && (
+						{progress && status !== "done" && (
 							<span className="text-sm text-gray-400">{progress}</span>
 						)}
 					</div>
