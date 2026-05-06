@@ -24,11 +24,6 @@ use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
-use PhpOffice\PhpSpreadsheet\Style\Conditional;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Settings;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
-use Symfony\Component\Cache\Psr16Cache;
 
 class ProcessRecordingsExport implements ShouldQueue
 {
@@ -39,30 +34,33 @@ class ProcessRecordingsExport implements ShouldQueue
         'rh'   => ['uar' => 62.0, 'lar' => 48.0, 'ucl' => 60.0, 'lcl' => 50.0],
     ];
 
-    public int $timeout = 7200; // 2 hours
+    public int $timeout = 7200;
 
     public function __construct(public ExportJob $exportJob) {}
 
     public function handle(OmegaIsdService $omega): void
     {
-        ini_set('memory_limit', '512M');
+        ini_set('memory_limit', '1G');
 
         $this->exportJob->update(['status' => 'processing', 'progress' => 'Fetching all devices...']);
-
-        $fsPool  = new FilesystemAdapter('phpspreadsheet', 0, storage_path('framework/cache'));
-        $fsCache = new Psr16Cache($fsPool);
-        Settings::setCache($fsCache);
 
         $params  = $this->exportJob->params;
         $date    = Carbon::parse($params['date']);
         $period  = (int) $params['period'];
         $devices = Device::all();
 
-        // --- Fetch all devices concurrently ---
-        $responses = Http::pool(function (Pool $pool) use ($devices, $date, $period) {
+        $transferTimeout = match ($period) {
+            4 => 180,
+            3 => 90,
+            2 => 45,
+            default => 20,
+        };
+
+        $responses = Http::pool(function (Pool $pool) use ($devices, $date, $period, $transferTimeout) {
             foreach ($devices as $device) {
                 $pool->as($device->id)
-                    ->timeout(180)
+                    ->connectTimeout(15)
+                    ->timeout($transferTimeout)
                     ->withHeaders([
                         'Referer' => "http://{$device->ip}/pLoadWbPg?pgNo=30",
                         'Origin'  => "http://{$device->ip}",
@@ -78,7 +76,6 @@ class ProcessRecordingsExport implements ShouldQueue
             }
         });
 
-        // --- Build spreadsheet (fast, no more waiting per device) ---
         $this->exportJob->update(['progress' => 'Building spreadsheet...']);
 
         $spreadsheet = new Spreadsheet();
@@ -92,18 +89,28 @@ class ProcessRecordingsExport implements ShouldQueue
             [],
             ['Location', 'IP Address', 'Status', 'Data Points Found'],
         ], null, 'A1');
-        $this->applyHeaderStyle($overview, 'A4:E4');
+
+        $overview->getColumnDimension('A')->setWidth(30);
+        $overview->getColumnDimension('B')->setWidth(18);
+        $overview->getColumnDimension('C')->setWidth(14);
+        $overview->getColumnDimension('D')->setWidth(18);
 
         $overviewRow = 5;
-        $total = $devices->count();
-        $done  = 0;
+        $total       = $devices->count();
+        $done        = 0;
 
         foreach ($devices as $device) {
             $response = $responses[$device->id];
             unset($responses[$device->id]);
 
+            $sheetTitle = substr(
+                preg_replace('/[\\\\\/\?\*\[\]\:]/', '-', trim($device->location ?? "Dev-{$device->id}")),
+                0,
+                31
+            );
+
             $sheet = $spreadsheet->createSheet();
-            $sheet->setTitle(substr(trim($device->name) ?: "Dev-{$device->id}", 0, 31));
+            $sheet->setTitle($sheetTitle);
             $done++;
 
             if ($response instanceof \Exception || !$response->successful()) {
@@ -113,9 +120,11 @@ class ProcessRecordingsExport implements ShouldQueue
 
                 Log::warning("Export: unreachable [{$device->name}] {$device->ip} — {$reason}");
                 $sheet->setCellValue('A1', "Device unreachable: {$reason}");
-                $this->updateOverviewRow($overview, $overviewRow, $device, 'Unreachable', 0, 'FFC7CE');
+                $this->updateOverviewRow($overview, $overviewRow, $device, 'Unreachable', 0);
                 $overviewRow++;
-
+                $this->exportJob->update([
+                    'progress' => "Building spreadsheet... ({$done}/{$total} devices) " . now()->format('H:i:s'),
+                ]);
                 continue;
             }
 
@@ -123,29 +132,25 @@ class ProcessRecordingsExport implements ShouldQueue
 
             if ($records->isEmpty()) {
                 $sheet->setCellValue('A1', 'No data recorded for this period.');
-                $this->updateOverviewRow($overview, $overviewRow, $device, 'No Data', 0, 'FFEB9C');
+                $this->updateOverviewRow($overview, $overviewRow, $device, 'No Data', 0);
             } else {
                 $this->writeDeviceSheet($sheet, $records);
                 $this->addChart($sheet, $records->count());
-                $sheet->getTabColor()->setRGB('00B050');
-                $this->updateOverviewRow($overview, $overviewRow, $device, 'OK', $records->count(), 'C6EFCE');
+                $this->updateOverviewRow($overview, $overviewRow, $device, 'OK', $records->count());
             }
 
-            $this->exportJob->update([
-                'progress' => "Building spreadsheet... ({$done}/{$total} devices)",
-            ]);
-
             $overviewRow++;
-
             unset($records);
-        }
 
-        foreach (range('A', 'E') as $col) {
-            $overview->getColumnDimension($col)->setAutoSize(true);
+            $this->exportJob->update([
+                'progress' => "Building spreadsheet... ({$done}/{$total} devices) " . now()->format('H:i:s'),
+            ]);
         }
 
         $filename = 'report_' . $date->format('Ymd') . '_' . time() . '.xlsx';
         $path     = 'exports/' . $filename;
+
+        $this->exportJob->update(['progress' => 'Saving file... ' . now()->format('H:i:s')]);
 
         $writer = new Xlsx($spreadsheet);
         $writer->setIncludeCharts(true);
@@ -184,6 +189,9 @@ class ProcessRecordingsExport implements ShouldQueue
 
     private function writeDeviceSheet(Worksheet $sheet, Collection $records): void
     {
+        $sheet->getColumnDimension('A')->setWidth(22);
+        $sheet->getColumnDimension('J')->setWidth(22);
+
         $this->writeMeasurementTable(
             sheet: $sheet,
             records: $records,
@@ -192,8 +200,6 @@ class ProcessRecordingsExport implements ShouldQueue
             headers: ['Date and Time', 'T-UAR', 'T-LAR', 'T-UCL', 'T-LCL', 'Temperature', 'Dev', 'sqrd'],
             limits: self::LIMITS['temp'],
             valueKey: 'temperature',
-            valueFormatCode: '0.00',
-            devFormatCode: '0.00',
         );
 
         $this->writeMeasurementTable(
@@ -204,8 +210,6 @@ class ProcessRecordingsExport implements ShouldQueue
             headers: ['Date and Time', 'RH-UAR', 'RH-LAR', 'RH-UCL', 'RH-LCL', 'Relative Humidity', 'Dev', 'sqrd'],
             limits: self::LIMITS['rh'],
             valueKey: 'humidity',
-            valueFormatCode: '0.00"%"',
-            devFormatCode: '0.00"%"',
         );
     }
 
@@ -217,61 +221,19 @@ class ProcessRecordingsExport implements ShouldQueue
         array      $headers,
         array      $limits,
         string     $valueKey,
-        string     $valueFormatCode = 'General',
-        string     $devFormatCode   = 'General',
     ): void {
-        $col = fn(int $offset) => Coordinate::stringFromColumnIndex($startColIndex + $offset);
+        $col  = fn(int $offset) => Coordinate::stringFromColumnIndex($startColIndex + $offset);
+        $n    = $records->count();
+        $mean = $records->avg($valueKey);
 
-        $mean   = $records->avg($valueKey);
-        $sqrds  = $records->map(fn($r) => ($r[$valueKey] - $mean) ** 2)->all();
-        $n      = count($sqrds);
-        $stdDev = $n > 0 ? sqrt(array_sum($sqrds) / $n) : 0;
+        $sumSqrd = $records->sum(fn($r) => ($r[$valueKey] - $mean) ** 2);
+        $stdDev  = $n > 0 ? sqrt($sumSqrd / $n) : 0;
 
         $sheet->setCellValue($col(6) . $startRow, 'Standard Deviation:');
         $sheet->setCellValue($col(7) . $startRow, $stdDev);
-        $sheet->getStyle($col(6) . $startRow)->getFont()->setBold(true);
-        $sheet->getStyle($col(7) . $startRow)->getNumberFormat()->setFormatCode($devFormatCode);
 
         $headerRow = $startRow + 1;
         $sheet->fromArray($headers, null, $col(0) . $headerRow);
-        $this->applyHeaderStyle($sheet, $col(0) . $headerRow . ':' . $col(7) . $headerRow);
-
-        $dataRow = $headerRow + 1;
-        // Outside UAR/LAR — red (action)
-        $redHigh = new Conditional();
-        $redHigh->setConditionType(Conditional::CONDITION_CELLIS);
-        $redHigh->setOperatorType(Conditional::OPERATOR_GREATERTHAN);
-        $redHigh->addCondition($limits['uar']);
-        $redHigh->getStyle()->getFill()
-            ->setFillType(Fill::FILL_SOLID)
-            ->getStartColor()->setRGB('FFC7CE');
-
-        $redLow = new Conditional();
-        $redLow->setConditionType(Conditional::CONDITION_CELLIS);
-        $redLow->setOperatorType(Conditional::OPERATOR_LESSTHAN);
-        $redLow->addCondition($limits['lar']);
-        $redLow->getStyle()->getFill()
-            ->setFillType(Fill::FILL_SOLID)
-            ->getStartColor()->setRGB('FFC7CE');
-
-        // Outside UCL/LCL but inside UAR/LAR — yellow (warning)
-        $yellowHigh = new Conditional();
-        $yellowHigh->setConditionType(Conditional::CONDITION_CELLIS);
-        $yellowHigh->setOperatorType(Conditional::OPERATOR_BETWEEN);
-        $yellowHigh->addCondition($limits['ucl']);
-        $yellowHigh->addCondition($limits['uar']);
-        $yellowHigh->getStyle()->getFill()
-            ->setFillType(Fill::FILL_SOLID)
-            ->getStartColor()->setRGB('FFEB9C');
-
-        $yellowLow = new Conditional();
-        $yellowLow->setConditionType(Conditional::CONDITION_CELLIS);
-        $yellowLow->setOperatorType(Conditional::OPERATOR_BETWEEN);
-        $yellowLow->addCondition($limits['lar']);
-        $yellowLow->addCondition($limits['lcl']);
-        $yellowLow->getStyle()->getFill()
-            ->setFillType(Fill::FILL_SOLID)
-            ->getStartColor()->setRGB('FFEB9C');
 
         $rows = [];
         foreach ($records as $record) {
@@ -285,30 +247,14 @@ class ProcessRecordingsExport implements ShouldQueue
                 $limits['lcl'],
                 $value,
                 $dev,
-                ($dev) ** 2,
+                $dev ** 2,
             ];
         }
 
         $sheet->fromArray($rows, null, $col(0) . ($headerRow + 1));
-
-        $sheet->getStyle($col(5) . ($headerRow + 1) . ':' . $col(5) . ($dataRow - 1))
-            ->getNumberFormat()->setFormatCode($valueFormatCode);
-        $sheet->getStyle($col(6) . ($headerRow + 1) . ':' . $col(6) . ($dataRow - 1))
-            ->getNumberFormat()->setFormatCode($devFormatCode);
-
-        $valueRange = $col(5) . ($startRow + 2) . ':' . $col(5) . ($dataRow - 1);
-
-        // Order matters — Excel evaluates top to bottom, first match wins.
-        // Put red first so UAR/LAR breach isn't overridden by the yellow rule.
-        $sheet->getStyle($valueRange)->setConditionalStyles([
-            $redHigh,
-            $redLow,
-            $yellowHigh,
-            $yellowLow,
-        ]);
     }
 
-    private function updateOverviewRow($sheet, $row, $device, $status, $count, $rgbColor): void
+    private function updateOverviewRow(Worksheet $sheet, int $row, Device $device, string $status, int $count): void
     {
         $sheet->fromArray([
             $device->location ?? '-',
@@ -316,19 +262,6 @@ class ProcessRecordingsExport implements ShouldQueue
             $status,
             $count,
         ], null, "A{$row}");
-
-        $sheet->getStyle("A{$row}:E{$row}")->getFill()
-            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-            ->getStartColor()->setRGB($rgbColor);
-    }
-
-    private function applyHeaderStyle($sheet, string $range): void
-    {
-        $style = $sheet->getStyle($range);
-        $style->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
-        $style->getFill()
-            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-            ->getStartColor()->setRGB('2D3748');
     }
 
     private function addChart(Worksheet $sheet, int $count): void
@@ -339,7 +272,6 @@ class ProcessRecordingsExport implements ShouldQueue
         $dataRowStart = 3;
         $dataRowEnd   = $count + 2;
 
-        // Temp chart — starts at column S (after RH table ends at Q + gap)
         $sheet->addChart($this->buildLineChart(
             sheetName: $sheetName,
             title: 'Temperature',
@@ -354,7 +286,6 @@ class ProcessRecordingsExport implements ShouldQueue
             yMax: self::LIMITS['temp']['uar'] + 3,
         ));
 
-        // RH chart — starts at column AB
         $sheet->addChart($this->buildLineChart(
             sheetName: $sheetName,
             title: 'Relative Humidity',
@@ -391,7 +322,7 @@ class ProcessRecordingsExport implements ShouldQueue
                 "'{$sheetName}'!\${$xCol}\${$dataRowStart}:\${$xCol}\${$dataRowEnd}",
                 null,
                 $pointCount,
-                marker: "none"
+                marker: 'none'
             ),
         ];
 
@@ -405,7 +336,7 @@ class ProcessRecordingsExport implements ShouldQueue
                 null,
                 1,
                 [$seriesLabels[$i]],
-                marker: "none"
+                marker: 'none'
             );
 
             $seriesData[] = new DataSeriesValues(
@@ -413,7 +344,7 @@ class ProcessRecordingsExport implements ShouldQueue
                 "'{$sheetName}'!\${$col}\${$dataRowStart}:\${$col}\${$dataRowEnd}",
                 null,
                 $pointCount,
-                marker: "none"
+                marker: 'none'
             );
         }
 
