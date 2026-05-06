@@ -62,7 +62,7 @@ class ProcessRecordingsExport implements ShouldQueue
         $responses = Http::pool(function (Pool $pool) use ($devices, $date, $period) {
             foreach ($devices as $device) {
                 $pool->as($device->id)
-                    ->timeout(20)
+                    ->timeout(180)
                     ->withHeaders([
                         'Referer' => "http://{$device->ip}/pLoadWbPg?pgNo=30",
                         'Origin'  => "http://{$device->ip}",
@@ -104,6 +104,7 @@ class ProcessRecordingsExport implements ShouldQueue
 
             $sheet = $spreadsheet->createSheet();
             $sheet->setTitle(substr(trim($device->name) ?: "Dev-{$device->id}", 0, 31));
+            $done++;
 
             if ($response instanceof \Exception || !$response->successful()) {
                 $reason = $response instanceof \Exception
@@ -130,7 +131,6 @@ class ProcessRecordingsExport implements ShouldQueue
                 $this->updateOverviewRow($overview, $overviewRow, $device, 'OK', $records->count(), 'C6EFCE');
             }
 
-            $done++;
             $this->exportJob->update([
                 'progress' => "Building spreadsheet... ({$done}/{$total} devices)",
             ]);
