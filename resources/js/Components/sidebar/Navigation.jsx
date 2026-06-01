@@ -1,4 +1,4 @@
-import Dropdown from "@/Components/sidebar/Dropdown";
+import Dropdown from "@/Components/sidebar/DropDown";
 import SidebarLink from "@/Components/sidebar/SidebarLink";
 import { usePage } from "@inertiajs/react";
 import { BiCalendar, BiExport, BiTask } from "react-icons/bi";
