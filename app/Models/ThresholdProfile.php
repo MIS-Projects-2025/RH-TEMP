@@ -12,6 +12,10 @@ class ThresholdProfile extends Model
     'temp_max',
     'rh_min',
     'rh_max',
+    'temp_crit_min',
+    'temp_crit_max',
+    'rh_crit_min',
+    'rh_crit_max',
   ];
 
   protected $casts = [

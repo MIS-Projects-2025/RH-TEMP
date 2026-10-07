@@ -64,7 +64,7 @@ class AuthenticationController extends Controller
         $request->session()->regenerateToken();
 
         $redirectUrl = urlencode(route('dashboard'));
-        return redirect("http://192.168.2.221:8200/logout?redirect={$redirectUrl}")
+        return redirect("http://192.168.20.21:8200/logout?redirect={$redirectUrl}")
             ->withCookie(cookie()->forget('sso_token'));
     }
 }
