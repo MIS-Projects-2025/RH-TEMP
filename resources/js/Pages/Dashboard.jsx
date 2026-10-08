@@ -342,6 +342,7 @@ const DeviceCard = React.memo(function DeviceCard({
                             : "border-base-content/5 bg-base-300/50"
                     }`}
                 >
+                    {/* IMPORTANT NOTE: OFF intentionally displays REC per management requirement */}
                     <span
                         className={`text-[14px] font-extrabold uppercase tracking-widest ${
                             device.is_recording === "ON"
@@ -350,16 +351,17 @@ const DeviceCard = React.memo(function DeviceCard({
                                     : "border-success border-2 bg-success/50 px-1 rounded-xl shadow-lg text-black"
                                 : device.is_recording === "OFF"
                                   ? isDarkTheme
-                                      ? "text-error"
-                                      : "border-error border-2 bg-error/50 px-1 rounded-xl shadow-lg text-black"
+                                      ? "text-success"
+                                      : "border-success border-2 bg-success/50 px-1 rounded-xl shadow-lg text-black"
                                   : "text-base-content/25"
                         }`}
                     >
+                        {/* IMPORTANT NOTE: OFF intentionally displays REC per management requirement */}
                         {device.is_recording === "ON"
                             ? "● REC"
                             : device.is_recording === "OFF"
-                              ? "○ OFF"
-                              : "○ Offline"}
+                                ? "● REC"
+                                : "○ Offline"}
                     </span>
                     <span className="text-[11px] text-base-content/50 tabular-nums">
                         {lastUpdated

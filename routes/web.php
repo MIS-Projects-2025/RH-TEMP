@@ -21,6 +21,9 @@ require __DIR__ . '/auth.php';
 
 Route::get('/home', fn() => Inertia::render('Home'))->name('home');
 
+Route::get('facility/dashboard',       [StatusController::class, 'facilityIndex'])->name('facility.dashboard')
+    ->withoutMiddleware([AuthMiddleware::class, SessionMiddleware::class]);
+
 Route::get('/dashboard',       [StatusController::class, 'index'])->name('dashboard')
     ->withoutMiddleware([AuthMiddleware::class, SessionMiddleware::class]);
 Route::post('/status',         [StatusController::class, 'fetchStatus'])->name('status.fetch');
