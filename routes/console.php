@@ -9,4 +9,10 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 
-Schedule::command('app:fetch-device-recordings')->everyTwoMinutes();
+// Schedule::command('app:fetch-device-recordings')->everyTwoMinutes(); // deprecated
+
+Schedule::command('app:poll-device-alerts')
+    ->everyFiveSeconds()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/device-alerts-scheduler.log'));

@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'device_proxy' => [
+        'url' => env('DEVICE_PROXY_URL', ''),
+    ],
+
+    'device_alert' => [
+        'recipients' => env('DEVICE_ALERT_EMAILS', ''),
+        'orange_enabled' => env('DEVICE_ALERT_ORANGE_ENABLED', false),
+    ],
 ];
