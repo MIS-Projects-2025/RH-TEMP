@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\SessionMiddleware;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\AlertExportController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -29,6 +30,11 @@ Route::get('/dashboard',       [StatusController::class, 'index'])->name('dashbo
 Route::post('/status',         [StatusController::class, 'fetchStatus'])->name('status.fetch');
 Route::post('/status/save-logs', [StatusController::class, 'saveLogs'])->name('status.saveLogs');
 Route::post('/dashboard/log',    [StatusController::class, 'log'])->name('dashboard.log');
+
+Route::prefix('alerts')->middleware(RoutePermissionMiddleware::class)->group(function () {
+    Route::get('/export', [AlertExportController::class, 'index'])->name('alerts.export');
+    Route::get('/export/download', [AlertExportController::class, 'download'])->name('alerts.export.download');
+});
 
 Route::prefix('threshold-profiles')->group(
     function () {

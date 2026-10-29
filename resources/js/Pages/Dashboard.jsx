@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import formatPastDateTimeLabel from "@/Utils/formatPastDateTimeLabel";
 import { RiWifiOffLine } from "react-icons/ri";
 import { useThemeStore } from "@/Store/themeStore";
@@ -15,6 +15,101 @@ function getLevel(v, min, max, critMin, critMax) {
     if ((min != null && v < min) || (max != null && v > max)) return "orange";
     return "green";
 }
+
+// order here = display order; colors are pale so the red/orange/lime cards still stand out
+// const GROUPS = [
+//     { key: "PL1", cls: "bg-[#FC03F0]/20 border-[#FC03F0]/33" },
+//     { key: "PL6", cls: "bg-[#F0FC03]/20 border-[#F0FC03]/33" },
+//     { key: "PL3", cls: "bg-[#03F0FC]/20 border-[#03F0FC]/33" },
+//     { key: "OTHER", cls: "bg-stone-400/20 border-stone-500/33" },
+// ];
+
+const GROUPS = [
+    { key: "PL1", cls: "fill-[#007ecc]/30 stroke-[#03F0FC] stroke-[1]" },
+    { key: "PL6", cls: "fill-[#FC03F0]/25 stroke-[#FC03F0] stroke-[1]" },
+    { key: "PL3", cls: "fill-[#F0FC03]/75 stroke-[#F0FC03] stroke-[2]" },
+    { key: "OTHER", cls: "fill-stone-400/30 stroke-stone-500 stroke-[1]" },
+];
+
+const PAD = 4;
+const RADIUS = 20; // outline corner radius
+
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+const toward = (p, q, r) => {
+    const d = dist(p, q);
+    return [p[0] + ((q[0] - p[0]) / d) * r, p[1] + ((q[1] - p[1]) / d) * r];
+};
+
+// rects: [{l, t, r, b}] -> rounded SVG path around their union
+function buildOutline(rects) {
+    // 1. cluster into rows by top edge
+    const rows = [];
+    [...rects]
+        .sort((a, b) => a.t - b.t || a.l - b.l)
+        .forEach((c) => {
+            const row = rows.find((r) => Math.abs(r.t - c.t) < 8);
+            if (row) {
+                row.l = Math.min(row.l, c.l);
+                row.r = Math.max(row.r, c.r);
+                row.b = Math.max(row.b, c.b);
+            } else {
+                rows.push({ ...c });
+            }
+        });
+
+    // 2. inflate sideways, bridge the gap between rows at its midpoint
+    rows.forEach((r) => {
+        r.l -= PAD;
+        r.r += PAD;
+    });
+    rows.forEach((r, i) => {
+        const prev = rows[i - 1];
+        const next = rows[i + 1];
+        r.top = prev ? (prev.b + r.t) / 2 : r.t - PAD;
+        r.bot = next ? (r.b + next.t) / 2 : r.b + PAD;
+    });
+
+    // 3. polygon: down the right side, up the left side
+    const pts = [];
+    rows.forEach((r) => pts.push([r.r, r.top], [r.r, r.bot]));
+    for (let i = rows.length - 1; i >= 0; i--) {
+        pts.push([rows[i].l, rows[i].bot], [rows[i].l, rows[i].top]);
+    }
+    const poly = pts.filter((p, i) => {
+        const q = pts[(i + 1) % pts.length];
+        return p[0] !== q[0] || p[1] !== q[1];
+    });
+
+    // 4. rounded corners
+    const n = poly.length;
+    let d = "";
+    poly.forEach((p, i) => {
+        const a = poly[(i - 1 + n) % n];
+        const b = poly[(i + 1) % n];
+        const r = Math.min(RADIUS, dist(p, a) / 2, dist(p, b) / 2);
+        const s = toward(p, a, r);
+        const e = toward(p, b, r);
+        d += `${i === 0 ? "M" : "L"}${s[0]} ${s[1]} Q${p[0]} ${p[1]} ${e[0]} ${e[1]} `;
+    });
+    return d + "Z";
+}
+
+const groupKey = (loc) => {
+    const k = /^(PL\d+)/i.exec(loc ?? "")?.[1]?.toUpperCase();
+    return GROUPS.some((g) => g.key === k) ? k : "OTHER";
+};
+
+const groupRank = (loc) => GROUPS.findIndex((g) => g.key === groupKey(loc));
+
+const isPL = (s) => /^PL\d/i.test(s ?? "");
+
+// PL-prefixed first, then natural sort so "Line 2" < "Line 10" and Ω1 < Ω2
+const byLocation = (a, b) =>
+    groupRank(a.location) - groupRank(b.location) ||
+    (a.location ?? "").localeCompare(b.location ?? "", undefined, {
+        numeric: true,
+        sensitivity: "base",
+    });
 
 const RANK = { green: 0, orange: 1, red: 2 };
 
@@ -233,15 +328,17 @@ const DeviceCard = React.memo(function DeviceCard({
             <div
                 className={clsx(
                     "relative flex flex-col w-56 rounded-2xl overflow-hidden border transition-all duration-700",
-                    failed && "order-first animate-shake",
+                    // failed && "order-first animate-shake", // removing jump-to-front
+                    failed && "animate-shake",
                     failed && isDarkTheme && "bg-red-900 border-red-800 shadow-[0_0_24px_theme(colors.red.900)]",
                     failed && !isDarkTheme && "bg-red-500 border-red-400 shadow-[0_0_24px_theme(colors.red.200)]",
 
-                    warning && "order-[-1]",
+                    // warning && "order-[-1]", // removing jump-to-front
                     warning && isDarkTheme && "bg-orange-800 border-orange-600 shadow-[0_0_24px_theme(colors.orange.900)]",
                     warning && !isDarkTheme && "bg-orange-400 border-orange-300 shadow-[0_0_24px_theme(colors.orange.200)]",
 
-                    !failed && !warning && isOffline && "order-last bg-base-200 border-base-300",
+                    !failed && !warning && isOffline && "bg-base-200 border-base-300",
+                    // !failed && !warning && isOffline && "order-last bg-base-200 border-base-300", // removing jump-to-last
                     !failed && !warning && !isOffline && isDarkTheme && "bg-lime-900 border-lime-700 shadow-[0_4px_24px_rgba(0,0,0,0.4)]",
                     !failed && !warning && !isOffline && !isDarkTheme && "bg-lime-300 border-lime-400 shadow-[0_4px_24px_rgba(0,0,0,0.10)]",
                 )}
@@ -377,7 +474,7 @@ const DeviceCard = React.memo(function DeviceCard({
 // --- Dashboard --------------------------------------------------------
 export default function Dashboard({ devices: initialDevices, thresholds }) {
     const [devices, setDevices] = useState(
-        initialDevices.map((d) => ({
+        [...initialDevices].sort(byLocation).map((d) => ({
             ...d,
             temp: undefined,
             rh: undefined,
@@ -387,6 +484,41 @@ export default function Dashboard({ devices: initialDevices, thresholds }) {
 
     const [expanded, setExpanded] = useState(true);
     const [clock, setClock] = useState("");
+    const wrapRef = useRef(null);
+    const cellRefs = useRef({});
+    const [outlines, setOutlines] = useState([]);
+
+    useLayoutEffect(() => {
+        const wrap = wrapRef.current;
+        if (!wrap) return;
+
+        const measure = () => {
+            const byGroup = {};
+            devices.forEach((d) => {
+                const el = cellRefs.current[d.ip];
+                if (!el) return;
+                (byGroup[groupKey(d.location)] ??= []).push({
+                    l: el.offsetLeft,
+                    t: el.offsetTop,
+                    r: el.offsetLeft + el.offsetWidth,
+                    b: el.offsetTop + el.offsetHeight,
+                });
+            });
+            setOutlines(
+                GROUPS.filter((g) => byGroup[g.key]).map((g) => ({
+                    key: g.key,
+                    cls: g.cls,
+                    d: buildOutline(byGroup[g.key]),
+                })),
+            );
+        };
+
+        measure();
+        const ro = new ResizeObserver(measure);
+        ro.observe(wrap);
+        Object.values(cellRefs.current).forEach((el) => el && ro.observe(el));
+        return () => ro.disconnect();
+    }, [devices]);
 
     // Clock
     useEffect(() => {
@@ -449,14 +581,28 @@ export default function Dashboard({ devices: initialDevices, thresholds }) {
                 {/* </div> */}
             </div>
 
-            <div className="flex flex-wrap justify-center mb-10 gap-2 animate-slideup">
-                {devices.map((device, index) => (
-                    <DeviceCard
+            <div
+                ref={wrapRef}
+                className="relative flex flex-wrap justify-center items-start gap-x-4 gap-y-6 animate-slideup"
+            >
+                <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+                    {outlines.map((o) => (
+                        <path key={o.key} d={o.d} className={o.cls} strokeWidth={2} />
+                    ))}
+                </svg>
+
+                {devices.map((device, i) => (
+                    <div
                         key={device.ip}
-                        device={device}
-                        thresholds={thresholds}
-                        index={index}
-                    />
+                        ref={(el) => (cellRefs.current[device.ip] = el)}
+                        className="relative"
+                    >
+                        <DeviceCard
+                            device={device}
+                            thresholds={thresholds}
+                            index={i}
+                        />
+                    </div>
                 ))}
 
                 {devices.length === 0 && (

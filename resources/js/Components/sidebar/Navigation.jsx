@@ -58,7 +58,7 @@ export default function NavLinks({ isCollapse }) {
 			/>
 
 			<SidebarLink
-				href={route("export.index")}
+				href={route("alerts.export")}
 				label="Export Data"
 				icon={<BiExport className="w-full h-full" />}
 				isIconOnly={isCollapse}

@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AlertLevel;
 use App\Models\Device;
+use App\Models\DeviceAlert;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
@@ -15,7 +17,7 @@ class PollDeviceAlerts extends Command
 {
     protected $signature = 'app:poll-device-alerts';
 
-    protected $description = 'Poll all devices and send email alerts for orange and red readings';
+    protected $description = 'Poll all devices, save orange/red events, and send email alerts';
 
     public function handle(): int
     {
@@ -47,6 +49,9 @@ class PollDeviceAlerts extends Command
                 ->whereNotNull('ip')
                 ->where('ip', '<>', '')
                 ->get();
+
+            // name => id (green/orange/red), loaded once per run.
+            $levelIds = AlertLevel::pluck('id', 'name');
         } catch (Throwable $e) {
             $this->error('Failed to load devices: ' . $e->getMessage());
 
@@ -228,18 +233,61 @@ class PollDeviceAlerts extends Command
                 false
             );
 
+            $changed = $previousLevel !== $currentLevel;
+            $emailPending = $shouldSendEmail && !$alreadyNotified;
+
             /*
-             * No status change means no email.
+             * Nothing to do when the status is unchanged and no email is pending
+             * (a pending email here means an earlier send failed and is retried).
              */
-            if ($previousLevel === $currentLevel) {
+            if (!$changed && !$emailPending) {
                 continue;
+            }
+
+            /*
+             * Save every change into orange/red, whether or not an email goes out.
+             * The status is only advanced once the row is saved, so a DB failure
+             * is retried on the next poll instead of losing the event.
+             */
+            if ($changed) {
+                try {
+                    DeviceAlert::create([
+                        'device_id' => $device->getKey(),
+                        'device_ip' => $device->ip,
+                        'location' => $device->location,
+                        'threshold_profile_name' => $thresholds->name,
+                        'temp' => $reading['temp'],
+                        'rh' => $reading['rh'],
+                        'level_id' => $levelIds[$currentLevel],
+                        'previous_level_id' => $previousLevel ? $levelIds[$previousLevel] : null,
+                        'temp_level_id' => $levelIds[$tempLevel],
+                        'rh_level_id' => $levelIds[$rhLevel],
+                        'alerted_at' => now(),
+                    ] + $thresholds->only(DeviceAlert::THRESHOLDS));
+
+                    $cache->forever($statusKey, $currentLevel);
+
+                    $this->line(
+                        "{$device->location} ({$device->ip}): " .
+                            strtoupper($previousLevel ?? 'UNKNOWN') .
+                            ' -> ' . strtoupper($currentLevel)
+                    );
+                } catch (Throwable $e) {
+                    $this->error(
+                        "Failed to save alert for {$device->ip}: {$e->getMessage()}"
+                    );
+
+                    report($e);
+
+                    $failed++;
+                }
             }
 
             /*
             * At most one email per device per continuous alert incident.
             * If orange is disabled, a later red reading can still trigger an email.
             */
-            if ($shouldSendEmail && !$alreadyNotified) {
+            if ($emailPending) {
                 $location = $device->location ?: 'Unknown location';
 
                 $emoji = $currentLevel === 'red' ? '🔴' : '🟠';
@@ -298,20 +346,8 @@ class PollDeviceAlerts extends Command
                     report($e);
 
                     $failed++;
-                    continue;
                 }
             }
-
-            /*
-            * Update the current status even when orange email is disabled.
-            */
-            $cache->forever($statusKey, $currentLevel);
-
-            $this->line(
-                "{$device->location} ({$device->ip}): " .
-                    strtoupper($previousLevel ?? 'UNKNOWN') .
-                    ' -> ' . strtoupper($currentLevel)
-            );
         }
 
         $this->info(
