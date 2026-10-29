@@ -26,6 +26,21 @@ class StatusController extends Controller
         ]);
     }
 
+    public function indexMap()
+    {
+        return Inertia::render('DashboardMap', [
+            'devices' => Device::with('thresholdProfile')
+                ->whereNotIn('location', [
+                    'PL3 Line 3 Ω2',
+                    'PL3 Line 3 Ω1',
+                    'ADLT PMC',
+                    'Legacy PMC',
+                ])
+                ->orderBy('location')
+                ->get(),
+        ]);
+    }
+
     public function facilityIndex()
     {
         return Inertia::render('Dashboard', [

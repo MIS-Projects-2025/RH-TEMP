@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import { router } from "@inertiajs/react";
-const EMPTY_INPUT = { id: null, ip: "", location: "" };
+const EMPTY_INPUT = { id: null, ip: "", location: "", map_x: "", map_y: "" };
 import { usePage } from "@inertiajs/react";
 
 export default function DevicesIndex({ devices: initialDevices }) {
@@ -97,7 +97,13 @@ export default function DevicesIndex({ devices: initialDevices }) {
 	}
 
 	function setEditInput(device) {
-		setInput({ id: device.id, ip: device.ip, location: device.location });
+		setInput({
+			id: device.id,
+			ip: device.ip,
+			location: device.location,
+			map_x: device.map_x ?? "",
+			map_y: device.map_y ?? "",
+		});
 	}
 
 	function clearInput() {
@@ -179,6 +185,8 @@ export default function DevicesIndex({ devices: initialDevices }) {
 												)}
 											</th>
 										))}
+										<th>MAP X %</th>
+										<th>MAP Y %</th>
 										<th>Actions</th>
 									</tr>
 								</thead>
@@ -186,7 +194,7 @@ export default function DevicesIndex({ devices: initialDevices }) {
 									{paginated.length === 0 ? (
 										<tr>
 											<td
-												colSpan={3}
+												colSpan={5}
 												className="text-center text-base-content/50 py-8"
 											>
 												No devices found
@@ -197,6 +205,16 @@ export default function DevicesIndex({ devices: initialDevices }) {
 											<tr key={device.id}>
 												<td className="font-mono">{device.ip}</td>
 												<td>{device.location}</td>
+												<td className="font-mono">
+													{device.map_x ?? (
+														<span className="text-base-content/30">—</span>
+													)}
+												</td>
+												<td className="font-mono">
+													{device.map_y ?? (
+														<span className="text-base-content/30">—</span>
+													)}
+												</td>
 												<td className="flex gap-2">
 													<button
 														type="button"
@@ -300,6 +318,40 @@ export default function DevicesIndex({ devices: initialDevices }) {
 									value={input.location}
 									onChange={(e) =>
 										setInput((p) => ({ ...p, location: e.target.value }))
+									}
+								/>
+							</div>
+							<div className="form-control">
+								<label className="label">
+									<span className="label-text">Map X (%)</span>
+								</label>
+								<input
+									type="number"
+									min="0"
+									max="100"
+									step="0.01"
+									className="input input-bordered w-28"
+									placeholder="0 - 100"
+									value={input.map_x}
+									onChange={(e) =>
+										setInput((p) => ({ ...p, map_x: e.target.value }))
+									}
+								/>
+							</div>
+							<div className="form-control">
+								<label className="label">
+									<span className="label-text">Map Y (%)</span>
+								</label>
+								<input
+									type="number"
+									min="0"
+									max="100"
+									step="0.01"
+									className="input input-bordered w-28"
+									placeholder="0 - 100"
+									value={input.map_y}
+									onChange={(e) =>
+										setInput((p) => ({ ...p, map_y: e.target.value }))
 									}
 								/>
 							</div>

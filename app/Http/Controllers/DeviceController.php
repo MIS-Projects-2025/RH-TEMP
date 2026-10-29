@@ -26,11 +26,21 @@ class DeviceController extends Controller
         ]);
     }
 
+    // Floor-map position, as a percentage of the image. Both set or both empty.
+    private function mapRules(): array
+    {
+        return [
+            'map_x' => ['nullable', 'numeric', 'between:0,100', 'required_with:map_y'],
+            'map_y' => ['nullable', 'numeric', 'between:0,100', 'required_with:map_x'],
+        ];
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
             'ip'       => ['required', 'unique:devices,ip'],
             'location' => ['required', 'string', 'max:255'],
+            ...$this->mapRules(),
         ]);
 
         Device::create($validated);
@@ -43,11 +53,29 @@ class DeviceController extends Controller
         $validated = $request->validate([
             'ip'       => ['required', Rule::unique('devices', 'ip')->ignore($device->id)],
             'location' => ['required', 'string', 'max:255'],
+            ...$this->mapRules(),
         ]);
 
         $device->update($validated);
 
         return redirect()->route('devices.index')->with('success', "{$device->ip} successfully updated");
+    }
+
+    // Called by the floor map after a drag. Sends only what moved:
+    //   dot    -> map_x, map_y
+    //   bubble -> label_x, label_y  (both null = back to auto placement)
+    public function updatePosition(Request $request, Device $device)
+    {
+        $data = $request->validate([
+            'map_x'   => ['sometimes', 'required', 'numeric', 'between:0,100'],
+            'map_y'   => ['sometimes', 'required', 'numeric', 'between:0,100'],
+            'label_x' => ['sometimes', 'nullable', 'numeric', 'between:0,100', 'required_with:label_y'],
+            'label_y' => ['sometimes', 'nullable', 'numeric', 'between:0,100', 'required_with:label_x'],
+        ]);
+
+        $device->update($data);
+
+        return back(); // Inertia request: redirect back to the map
     }
 
     public function destroy(Device $device)

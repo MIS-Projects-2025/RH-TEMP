@@ -27,6 +27,9 @@ Route::get('facility/dashboard',       [StatusController::class, 'facilityIndex'
 
 Route::get('/dashboard',       [StatusController::class, 'index'])->name('dashboard')
     ->withoutMiddleware([AuthMiddleware::class, SessionMiddleware::class]);
+Route::get('/dashboard-map',       [StatusController::class, 'indexMap'])->name('dashboard-map')
+    ->withoutMiddleware([AuthMiddleware::class, SessionMiddleware::class]);
+
 Route::post('/status',         [StatusController::class, 'fetchStatus'])->name('status.fetch');
 Route::post('/status/save-logs', [StatusController::class, 'saveLogs'])->name('status.saveLogs');
 Route::post('/dashboard/log',    [StatusController::class, 'log'])->name('dashboard.log');
@@ -60,6 +63,7 @@ Route::prefix('devices')->group(function () {
         Route::post('/',           [DeviceController::class, 'store'])->name('devices.store');
         Route::put('/{device}',    [DeviceController::class, 'update'])->name('devices.update');
         Route::delete('/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
+        Route::patch('/{device}/position', [DeviceController::class, 'updatePosition'])->name('devices.position');
     });
 });
 
