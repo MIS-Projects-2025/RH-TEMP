@@ -45,7 +45,13 @@ class ApiPermissionMiddleware
       'quality management system',
     ];
 
-    $hasAccess = in_array($dept, $allowedDepartments);
+    $normalizedDept = strtolower(trim($dept));
+
+    $hasAccess = in_array(
+      $normalizedDept,
+      array_map(fn($d) => strtolower(trim($d)), $allowedDepartments),
+      true
+    );
 
     if ($dept !== 'mis' && !$hasAccess) {
       return response()->json([

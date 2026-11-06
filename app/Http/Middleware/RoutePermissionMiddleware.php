@@ -22,8 +22,13 @@ class RoutePermissionMiddleware
   {
     $user = $request->attributes->get('auth_user');
     $dept = $user->emp_dept ?? '';
+    $normalizedDept = strtolower(trim($dept));
 
-    $hasAccess = in_array(strtolower($dept), self::ALLOWED_DEPARTMENTS);
+    $hasAccess = in_array(
+      $normalizedDept,
+      array_map(fn($d) => strtolower(trim($d)), self::ALLOWED_DEPARTMENTS),
+      true
+    );
 
     if (!$hasAccess) {
       Log::info("Unauthorized access attempt by user: {$user->emp_id}, Department: {$dept}");
