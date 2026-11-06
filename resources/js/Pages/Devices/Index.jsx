@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import { router } from "@inertiajs/react";
-const EMPTY_INPUT = { id: null, ip: "", location: "", map_x: "", map_y: "" };
+const EMPTY_INPUT = { id: null, ip: "", location: "", type: "", map_x: "", map_y: "" };
 import { usePage } from "@inertiajs/react";
 
 export default function DevicesIndex({ devices: initialDevices }) {
@@ -43,7 +43,8 @@ export default function DevicesIndex({ devices: initialDevices }) {
 			.filter(
 				(d) =>
 					d.ip.toLowerCase().includes(q) ||
-					d.location.toLowerCase().includes(q),
+					d.location.toLowerCase().includes(q) ||
+					(d.type ?? "").toLowerCase().includes(q)
 			)
 			.sort((a, b) => {
 				const cmp = a[sortKey].localeCompare(b[sortKey]);
@@ -100,6 +101,7 @@ export default function DevicesIndex({ devices: initialDevices }) {
 		setInput({
 			id: device.id,
 			ip: device.ip,
+			type: device.type ?? "",
 			location: device.location,
 			map_x: device.map_x ?? "",
 			map_y: device.map_y ?? "",
@@ -173,7 +175,7 @@ export default function DevicesIndex({ devices: initialDevices }) {
 							<table className="table table-zebra w-full">
 								<thead>
 									<tr>
-										{["ip", "location"].map((col) => (
+										{["ip", "location", "type"].map((col) => (
 											<th
 												key={col}
 												className="cursor-pointer select-none"
@@ -194,7 +196,7 @@ export default function DevicesIndex({ devices: initialDevices }) {
 									{paginated.length === 0 ? (
 										<tr>
 											<td
-												colSpan={5}
+												colSpan={6}
 												className="text-center text-base-content/50 py-8"
 											>
 												No devices found
@@ -205,6 +207,7 @@ export default function DevicesIndex({ devices: initialDevices }) {
 											<tr key={device.id}>
 												<td className="font-mono">{device.ip}</td>
 												<td>{device.location}</td>
+												<td>{device.type || "—"}</td>
 												<td className="font-mono">
 													{device.map_x ?? (
 														<span className="text-base-content/30">—</span>
@@ -318,6 +321,24 @@ export default function DevicesIndex({ devices: initialDevices }) {
 									value={input.location}
 									onChange={(e) =>
 										setInput((p) => ({ ...p, location: e.target.value }))
+									}
+								/>
+							</div>
+							<div className="form-control">
+								<label className="label">
+									<span className="label-text">Type</span>
+								</label>
+								<input
+									type="text"
+									className="input input-bordered"
+									placeholder="e.g. COMET"
+									maxLength={50}
+									value={input.type}
+									onChange={(e) =>
+										setInput((p) => ({
+											...p,
+											type: e.target.value,
+										}))
 									}
 								/>
 							</div>

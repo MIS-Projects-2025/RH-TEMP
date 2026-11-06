@@ -37,6 +37,8 @@ class ApiPermissionMiddleware
 
     $allowedDepartments = [
       'equipment engineering',
+      'Facilities / MIS',
+      'Facilities/MIS',
       'mis',
       'process engineering',
       'quality assurance',

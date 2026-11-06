@@ -37,6 +37,13 @@ export default function NavLinks({ isCollapse }) {
 			/>
 
 			<SidebarLink
+				href={route("dashboard-map")}
+				label="RH & Temp Map"
+				icon={<LuLayoutDashboard className="w-full h-full" />}
+				isIconOnly={isCollapse}
+			/>
+
+			<SidebarLink
 				href={route("devices.index")}
 				label="Devices"
 				icon={<TiLocationArrowOutline className="w-full h-full" />}

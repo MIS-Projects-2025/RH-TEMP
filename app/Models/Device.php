@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Device extends Model
 {
-    protected $fillable = ['ip', 'location', 'map_x', 'map_y', 'label_x', 'label_y', 'threshold_profile_id'];
+    protected $fillable = ['ip', 'location', 'type', 'map_x', 'map_y', 'label_x', 'label_y', 'threshold_profile_id'];
 
     protected $casts = [
         'map_x' => 'float',

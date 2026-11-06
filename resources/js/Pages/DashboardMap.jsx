@@ -23,18 +23,20 @@ import {
 import { BW, BH, layoutBubbles, tailPoints } from "@/Utils/layoutBubbles";
 
 // Placeholder until you have the real floor plan. Replace with e.g. "/images/floor.png"
-const PLACEHOLDER = `data:image/svg+xml;utf8,${encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
-  <defs>
-    <pattern id="g" width="100" height="100" patternUnits="userSpaceOnUse">
-      <path d="M100 0H0V100" fill="none" stroke="#94a3b8" stroke-width="1"/>
-    </pattern>
-  </defs>
-  <rect width="1600" height="900" fill="#e2e8f0"/>
-  <rect width="1600" height="900" fill="url(#g)"/>
-  <rect x="40" y="40" width="1520" height="820" fill="none" stroke="#475569" stroke-width="6"/>
-  <text x="800" y="460" text-anchor="middle" font-family="sans-serif" font-size="48" fill="#64748b">FLOOR PLAN PLACEHOLDER</text>
-</svg>`)}`;
+// const PLACEHOLDER = `data:image/svg+xml;utf8,${encodeURIComponent(`
+// <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+//   <defs>
+//     <pattern id="g" width="100" height="100" patternUnits="userSpaceOnUse">
+//       <path d="M100 0H0V100" fill="none" stroke="#94a3b8" stroke-width="1"/>
+//     </pattern>
+//   </defs>
+//   <rect width="1600" height="900" fill="#e2e8f0"/>
+//   <rect width="1600" height="900" fill="url(#g)"/>
+//   <rect x="40" y="40" width="1520" height="820" fill="none" stroke="#475569" stroke-width="6"/>
+//   <text x="800" y="460" text-anchor="middle" font-family="sans-serif" font-size="48" fill="#64748b">FLOOR PLAN PLACEHOLDER</text>
+// </svg>`)}`;
+
+const PLACEHOLDER = "https://picsum.photos/1600/900?grayscale";
 
 // Full class strings (not built dynamically) so Tailwind can see them.
 const TONES = {

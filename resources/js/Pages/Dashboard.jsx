@@ -138,6 +138,23 @@ function getOverallLevel(temp, rh, th) {
     return RANK[t] >= RANK[r] ? t : r; // worst of the two wins
 }
 
+function parseCometResponse(text) {
+    const xml = new DOMParser().parseFromString(text, "text/xml");
+    const failed =
+        xml.querySelector("parsererror") ||
+        xml.querySelector("err")?.textContent !== "0";
+
+    if (failed) return { temp: "Offline", rh: "Offline", is_recording: "Off" };
+
+    const num = (sel) => {
+        const v = xml.querySelector(sel)?.textContent;
+        return v && !isNaN(v) ? v : "Offline";
+    };
+
+    // No recording flag on Comet. "ON" keeps the REC footer instead of "Offline".
+    return { temp: num("ch1 > aval"), rh: num("ch2 > aval"), is_recording: "ON" };
+}
+
 function parseDeviceResponse(text) {
     const temp = text.match(/Temperature\s+([\d.]+)/)?.[1] ?? "Offline";
     const rh = text.match(/Humidity\s+([\d.]+)/)?.[1] ?? "Offline";
@@ -235,11 +252,12 @@ const DeviceCard = React.memo(function DeviceCard({
         async function poll() {
             try {
                 setPolling(true);
+                const isComet = initialDevice?.type === "comet";
                 const res = await fetch(
-                    `${import.meta.env.VITE_PROXY_URL}/proxy/${initialDevice.ip}/postReadHtml?a`,
+                    `${import.meta.env.VITE_PROXY_URL}/proxy/${initialDevice.ip}/${isComet ? "values.xml" : "postReadHtml?a"}`,
                 );
                 const text = await res.text();
-                const parsed = parseDeviceResponse(text);
+                const parsed = (isComet ? parseCometResponse : parseDeviceResponse)(text);
                 setDevice({ ...initialDevice, ...parsed });
                 setLastUpdated(new Date());
             } catch {

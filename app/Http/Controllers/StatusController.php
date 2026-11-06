@@ -11,6 +11,26 @@ use App\Constants\DeviceTempThresholdConstants;
 
 class StatusController extends Controller
 {
+    public function cometTestIndex()
+    {
+        return Inertia::render('Dashboard', [
+            'devices' => Device::with('thresholdProfile')
+                ->orderBy('location')
+                ->get(),
+            // ->concat($this->cometDevices()),
+        ]);
+    }
+
+    public function facilityIndex()
+    {
+        return Inertia::render('Dashboard', [
+            'devices' => Device::with('thresholdProfile')
+                ->where('location', '!=', 'COMET EXAMPLE')
+                ->orderBy('location')
+                ->get(),
+        ]);
+    }
+
     public function index()
     {
         return Inertia::render('Dashboard', [
@@ -20,6 +40,7 @@ class StatusController extends Controller
                     'PL3 Line 3 Ω1',
                     'ADLT PMC',
                     'Legacy PMC',
+                    'COMET EXAMPLE',
                 ])
                 ->orderBy('location')
                 ->get(),
@@ -35,16 +56,10 @@ class StatusController extends Controller
                     'PL3 Line 3 Ω1',
                     'ADLT PMC',
                     'Legacy PMC',
+                    'COMET EXAMPLE',
                 ])
                 ->orderBy('location')
                 ->get(),
-        ]);
-    }
-
-    public function facilityIndex()
-    {
-        return Inertia::render('Dashboard', [
-            'devices' => Device::with('thresholdProfile')->orderBy('location')->get(),
         ]);
     }
 

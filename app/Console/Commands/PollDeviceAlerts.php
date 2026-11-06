@@ -84,9 +84,10 @@ class PollDeviceAlerts extends Command
             }
 
             $key = (string) $device->getKey();
+            $path = $device->type === 'comet' ? 'values.xml' : 'postReadHtml?a';
 
             $requests[$key] = [
-                'url' => "{$proxyUrl}/proxy/{$device->ip}/postReadHtml?a",
+                'url' => "{$proxyUrl}/proxy/{$device->ip}/{$path}",
             ];
 
             $devicesByKey[$key] = $device;
@@ -148,14 +149,16 @@ class PollDeviceAlerts extends Command
 
             if (!$response->successful()) {
                 $this->warn(
-                    "HTTP {$response->status()} returned by {$device->ip}."
+                    "HTTP {$response->status()} returned by {$device->ip} ({$requests[$key]['url']})."
                 );
 
                 $failed++;
                 continue;
             }
 
-            $reading = $this->parseDeviceResponse($response->body());
+            $reading = $device->type === 'comet'
+                ? $this->parseCometResponse($response->body())
+                : $this->parseDeviceResponse($response->body());
 
             /*
              * Do not treat missing/invalid readings as green.
@@ -356,6 +359,35 @@ class PollDeviceAlerts extends Command
         );
 
         return $failed > 0 ? self::FAILURE : self::SUCCESS;
+    }
+
+    /**
+     * Parse a Comet values.xml response (same rules as parseCometResponse in React):
+     * <err> must be "0", temp = ch1/aval, rh = ch2/aval.
+     */
+    private function parseCometResponse(string $text): array
+    {
+        $previous = libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($text);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $err = $xml ? trim((string) ($xml->xpath('//err')[0] ?? '')) : null;
+
+        if ($xml === false || $err !== '0') {
+            return ['temp' => null, 'rh' => null];
+        }
+
+        $num = function (string $path) use ($xml): ?float {
+            $v = trim((string) ($xml->xpath($path)[0] ?? ''));
+
+            return is_numeric($v) ? (float) $v : null;
+        };
+
+        return [
+            'temp' => $num('//ch1/aval'),
+            'rh' => $num('//ch2/aval'),
+        ];
     }
 
     /**

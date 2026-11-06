@@ -25,6 +25,9 @@ Route::get('/home', fn() => Inertia::render('Home'))->name('home');
 Route::get('facility/dashboard',       [StatusController::class, 'facilityIndex'])->name('facility.dashboard')
     ->withoutMiddleware([AuthMiddleware::class, SessionMiddleware::class]);
 
+Route::get('test/dashboard',       [StatusController::class, 'cometTestIndex'])->name('test.dashboard')
+    ->withoutMiddleware([AuthMiddleware::class, SessionMiddleware::class]);
+
 Route::get('/dashboard',       [StatusController::class, 'index'])->name('dashboard')
     ->withoutMiddleware([AuthMiddleware::class, SessionMiddleware::class]);
 Route::get('/dashboard-map',       [StatusController::class, 'indexMap'])->name('dashboard-map')

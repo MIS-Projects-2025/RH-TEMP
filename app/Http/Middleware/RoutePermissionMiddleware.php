@@ -10,6 +10,8 @@ class RoutePermissionMiddleware
 {
   const ALLOWED_DEPARTMENTS = [
     'equipment engineering',
+    'facilities / mis',
+    'facilities/mis',
     'mis',
     'process engineering',
     'quality assurance',
@@ -24,6 +26,7 @@ class RoutePermissionMiddleware
     $hasAccess = in_array(strtolower($dept), self::ALLOWED_DEPARTMENTS);
 
     if (!$hasAccess) {
+      Log::info("Unauthorized access attempt by user: {$user->emp_id}, Department: {$dept}");
       return redirect()->route('unauthorized');
     }
 

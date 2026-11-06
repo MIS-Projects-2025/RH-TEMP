@@ -40,6 +40,7 @@ class DeviceController extends Controller
         $validated = $request->validate([
             'ip'       => ['required', 'unique:devices,ip'],
             'location' => ['required', 'string', 'max:255'],
+            'type'     => ['nullable', 'string', 'max:50'],
             ...$this->mapRules(),
         ]);
 
@@ -53,6 +54,7 @@ class DeviceController extends Controller
         $validated = $request->validate([
             'ip'       => ['required', Rule::unique('devices', 'ip')->ignore($device->id)],
             'location' => ['required', 'string', 'max:255'],
+            'type'     => ['nullable', 'string', 'max:50'],
             ...$this->mapRules(),
         ]);
 
